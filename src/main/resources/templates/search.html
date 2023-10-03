@@ -1,0 +1,37 @@
+<!-- this template uses fragments, see fragments.html -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+
+<!-- replaced with <head> containing page title, charset, link to css -->
+<div th:replace="~{fragments :: docHead}"></div>
+
+<!-- assignment of some variables in <body> scope in order to fill in fragments variables
+      - those variables are specific to each template: index.html, search.html, create.html ...-->
+<body th:with="
+extraPathForAction='/search',
+extraPathForLinks='/search',
+searchLinkHTMLClass='current-page',
+formMethod='PUT',
+formButton='Update'">
+
+<!-- replaced with <header> containing navbar -->
+<div th:replace="~{fragments :: navbar}"></div>
+<main>
+
+    <!-- search bar -->
+    <section class="searchbar">
+        <form action="search" th:method="GET">
+            <label>Name to search: <input th:field="${entityDTO.entryName}"></label>
+            <input type="submit" value="Search" class="clickable">
+        </form>
+    </section>
+
+    <!-- replaced by <section> containing table view card (table of entries to browse) -->
+    <div th:replace="~{fragments :: tableView}"></div>
+
+    <!-- detail view card - contains form with fields, offers update and delete operations -->
+    <div th:replace="~{fragments :: detailView}"></div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!-- file with all the fragments (reusable code) used in this project's templates -->
+<!--TODO add buttons next to id# and Name attributes in table header for ascending and descending sorting -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+
+<!-- <head> with page title, charset, link to css -->
+<head th:fragment="docHead">
+  <meta charset="UTF-8">
+  <title>Generic CRUD application</title>
+  <link th:href="@{/css/styles.css}" rel="stylesheet" type="text/css">
+</head>
+
+<!-- <header> containing "navbar" -->
+<header th:fragment="navbar">
+  <h3 >Generic CRUD application</h3>
+  <nav>
+    <a href="/" th:class="${browseLinkHTMLClass} + ' clickable'">Browse all entries</a>
+    <a href="/search" th:class="${searchLinkHTMLClass} + ' clickable'">Search entries by name</a>
+    <a href="/create" th:class="${createLinkHTMLClass} + ' clickable'">Create new entry</a>
+  </nav>
+</header>
+
+<!-- <section> containing table view card (table of entries to browse) -->
+<section th:fragment="tableView" class="table-view">
+  <ol>
+    <li class="grid-item grid-header"> <!-- table header - names of columns -->
+      <div>id#</div>
+      <div>Name</div>
+      <div>Content</div>
+    </li>
+    <li th:each="entry: ${entries}" class="grid-item"> <!-- general table row - definition of data fields shown to client -->
+      <div th:text="${entry.entryId}"></div>
+      <div th:text="${entry.entryName}"></div>
+      <div th:text="${entry.entryContent}"></div>
+      <!-- button for opening the detail view of a given entry (table row): -->
+      <a th:href="${extraPathForLinks} + '?view=' + ${viewIndex} + '&id=' + ${entry.entryId}" class="clickable">detail</a>
+    </li>
+  </ol>
+  <ul id="table-view-navigation"> <!-- buttons for Browsing though the table -->
+    <!-- PREVIOUS button -->
+    <a th:href="${extraPathForLinks} + '?view=' + ${viewIndex - 1} + '&id=' +${selectedID}" class="previous-view clickable">PREVIOUS</a>
+    <!-- indicator of the position of the table view within the full table, for example "4/6" -->
+    <div th:text="${viewIndex + 1} + '/' + ${numberOfViews}" id="view-number">1/3</div>
+    <!-- NEXT button -->
+    <a th:href="${extraPathForLinks} + '?view=' + ${viewIndex + 1} + '&id=' +${selectedID}" class="next-view clickable">NEXT</a>
+  </ul>
+</section>
+
+<!-- <section> containing form with data fields, reset and update buttons -->
+<section th:fragment="detailView" th:if="${displayDetail}" class="detail-view">
+  <p th:if="${createLinkHTMLClass}">NEW ENTRY:</p>
+
+  <form th:action="${extraPathForAction} + '?view=' + ${viewIndex} + '&id=' +${selectedID}" th:method="${formMethod}">
+    <span th:unless="${createLinkHTMLClass}" th:text="'id# ' + ${selectedID}"></span>
+    <!-- data fields -->
+    <label>Name: <input th:field="${entityDTO.entryName}" type="text"/></label>
+    <label>Content: <input th:field="${entityDTO.entryContent}" type="text"/></label>
+    <!-- form buttons reset and update/create -->
+    <input type="reset" value="Reset" class="clickable">
+    <input type="submit" th:value="${formButton}" class="clickable">
+  </form>
+  <!-- delete button for the detail view -->
+  <form th:unless="${createLinkHTMLClass}" th:fragment="deleteButton" th:action="${extraPathForLinks} + '?view=' + ${viewIndex} + '&id=' +${selectedID}" th:method="DELETE">
+    <input type="submit" value="Delete" class="clickable"/>
+  </form>
+</section>
+
+
+</html>

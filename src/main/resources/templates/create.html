@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+
+<!-- replaced with <head> containing page title, charset, link to css -->
+<div th:replace="~{fragments :: docHead}"></div>
+
+<!-- assignment of some variables in <body> scope in order to fill in fragments variables
+      - those variables are specific to each template: index.html, search.html, create.html ...-->
+<body th:with="
+extraPathForAction='/create',
+extraPathForLinks='/',
+createLinkHTMLClass='current-page',
+formMethod='POST',
+formButton='Create'">
+
+<!-- replaced with <header> containing navbar -->
+<div th:replace="~{fragments :: navbar}"></div>
+<main>
+    <!-- replaced by <section> containing table view card (table of entries to browse) -->
+    <div th:replace="~{fragments :: tableView}"></div>
+
+    <!-- detail view card - contains form with fields, offers update and delete operations -->
+    <div th:replace="~{fragments :: detailView}"></div>
+
+</main>
+</body>
+</html>

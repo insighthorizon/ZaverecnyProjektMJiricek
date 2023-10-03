@@ -1,0 +1,139 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --navbar-height: 8vh;
+  --card-max-width: 500px;
+}
+
+header {
+  position: fixed;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: var(--navbar-height);
+  width: 100vw;
+  background-color: Wheat;
+}
+
+header > nav {
+  list-style-type: none;
+  display: flex;
+  gap: 10px;
+}
+
+.clickable {
+    border: 1px solid black;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    color: Navy;
+    padding: 5px;
+    width: fit-content;
+    height: fit-content;
+}
+
+.clickable:hover {
+  background-color: Thistle;
+}
+
+.table-view > ol > li > a {
+  padding: 0 2px 0 2px;
+}
+
+.current-page {
+  background-color: DarkSlateGray;
+  color: white;
+}
+
+main {
+ padding: calc(var(--navbar-height) + 10px) 10px 10px;
+ background-color: DarkSlateGray;
+ min-height: 100vh;
+}
+
+.table-view {
+  list-style: none;
+  background-color: Wheat;
+  max-width: 500px;
+  margin: auto;
+}
+
+.grid-item {
+  display: grid;
+  grid-template-columns: 3rem 5rem 8rem auto;
+}
+
+.grid-header {
+  background-color: DarkSlateGray;
+  color: white;
+  font-weight: bold;
+}
+
+#table-view-navigation {
+  padding: 1vh 5vw 1vh 5vw;
+  display: flex;
+  justify-content: space-between;
+}
+
+#table-view-navigation > div {
+  font-weight: bold;
+  font-color: Navy;
+}
+
+.table-view > ol {
+  min-height: 35vh;
+}
+
+.grid-item {
+ padding: 0 2px 0 2px;
+}
+
+.grid-item:not(.grid-header) {
+ margin-top: 2px;
+}
+
+.detail-view {
+ background-color: Wheat;
+ max-width: var(--card-max-width);
+ margin: 20px auto auto auto;
+ padding: 10px;
+}
+
+.detail-view > p {
+ font-weight: bold;
+ margin-bottom: 10px;
+}
+
+.detail-view > form > label,
+.detail-view > form > span {
+ display: grid;
+ grid-template-columns: 5rem auto;
+ margin-bottom: 10px;
+}
+
+.detail-view .clickable {
+  font-size: 1rem;
+}
+
+.detail-view > form {
+  display: inline;
+}
+
+.searchbar  {
+  margin: auto;
+}
+
+.searchbar {
+  max-width: 500px;
+  margin: 10px auto 10px auto;
+}
+
+.searchbar > form > label {
+  color: White;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
