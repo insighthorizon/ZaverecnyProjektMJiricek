@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Service
 public class DBService {
     /**
-     * id for the next entry to be added to database
+     * id for the next entry to be added to database - for the sake of generating unique id for each entity
      */
     private int nextId = 0;
     /**
@@ -158,6 +158,7 @@ public class DBService {
     }
 
     /**
+     * TODO add argument specifying max output length
      * Search and copy entries with given name.
      * Goes through the entire arraylist with linear search.
      * (data is not ordered by name)

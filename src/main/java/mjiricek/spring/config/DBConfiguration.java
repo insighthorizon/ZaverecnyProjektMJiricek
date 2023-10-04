@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
  * This class defines how to instantiate and initialize
  * services with internal data and constants for controllers
  * - Allowing us to initialize everything though dependency injection
- * instead of relying on statics
+ * instead of relying on statics or over-specific initialization within constructor
  * - Each method returns an instance of an object or a primitive constant
  * to be injected
  */
@@ -47,8 +47,8 @@ import org.springframework.context.annotation.Configuration;
 //    }
 //
 //}
-
-
+//
+//
 // DBController constructor - if we would actually use those beans
 //    public DBController(@Qualifier("createDBService") DBService dbService,
 //                        @Qualifier("getViewLength") int viewLength) {

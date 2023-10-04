@@ -1,4 +1,5 @@
 <!-- file with all the fragments (reusable code) used in this project's templates -->
+<!-- TODO fix traversing buttons and detail button not working in Search page -->
 <!--TODO add buttons next to id# and Name attributes in table header for ascending and descending sorting -->
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
@@ -40,7 +41,7 @@
     <!-- PREVIOUS button -->
     <a th:href="${extraPathForLinks} + '?view=' + ${viewIndex - 1} + '&id=' +${selectedID}" class="previous-view clickable">PREVIOUS</a>
     <!-- indicator of the position of the table view within the full table, for example "4/6" -->
-    <div th:text="${viewIndex + 1} + '/' + ${numberOfViews}" id="view-number">1/3</div>
+    <div th:text="${viewIndex + 1} + '/' + ${numberOfViews}" id="view-number"></div>
     <!-- NEXT button -->
     <a th:href="${extraPathForLinks} + '?view=' + ${viewIndex + 1} + '&id=' +${selectedID}" class="next-view clickable">NEXT</a>
   </ul>

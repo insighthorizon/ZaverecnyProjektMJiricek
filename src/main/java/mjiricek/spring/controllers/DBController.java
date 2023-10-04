@@ -27,8 +27,8 @@ public class DBController {
     private static final int VIEW_LENGTH = 10;
 
     /**
+     * TODO REFACTOR this method, maybe put reusable code into private method
      * TODO user input validation
-     * TODO put reusable code into private method
      * Handler of the GET request on the URL "/" (with url arguments)
      * @param viewIndex value of url parameter reresenting which view is being card displayed
      * @param model Model parameter for data to be presented to the client
@@ -47,11 +47,11 @@ public class DBController {
         if (searchOrCreate != null && searchOrCreate.equals("search")) {
             if (nameOfSearched != null) { // search by name
                 // get the entities from db (search by name)
-                shownEntries = dbService.showEntriesByName(nameOfSearched);
+                shownEntries = dbService.showEntriesByName(nameOfSearched); // TODO show only limited number of search results, but maybe still show position of the current view (example: 4/6)
                 // find how many view cards we have depending on the VIEW_LENGTH and dBSize
                 numberOfViews = (int) Math.ceil((double) shownEntries.size() / VIEW_LENGTH);
             } else {
-                numberOfViews = 1;
+                numberOfViews = 1; // before we search anything, empty results
                 shownEntries = null;
             }
         } else if (searchOrCreate != null && searchOrCreate.equals("create")) {
@@ -61,12 +61,11 @@ public class DBController {
             // get the entities from db (lookup by index)
             shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, (viewIndex + 1) * VIEW_LENGTH);
 
-        } else {
+        } else { // "/"
             // find how many view cards we have depending on the VIEW_LENGTH and dBSize
             numberOfViews = (int) Math.ceil((double) dbService.getDBSize() / VIEW_LENGTH);
             // get the entities from db (lookup by index)
             shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, (viewIndex + 1) * VIEW_LENGTH);
-
         }
 
         // handle wrong index
@@ -112,7 +111,7 @@ public class DBController {
      * @param model
      * @return
      */
-    @DeleteMapping({"/", "/{searchOrCreate}"})
+    @DeleteMapping({"/", "/search"})
     public String deleteEntry(@PathVariable(required = false) String searchOrCreate,
                               @RequestParam(value = "view", defaultValue = "0") int viewIndex,
                               @RequestParam(value = "id", required = false) String id,
@@ -133,7 +132,7 @@ public class DBController {
      * @param model
      * @return
      */
-    @PutMapping({"/", "/{searchOrCreate}"})
+    @PutMapping({"/", "/search"})
     public String updateEntry(@PathVariable(required = false) String searchOrCreate,
                               @RequestParam(value = "view", defaultValue = "0") int viewIndex,
                               @RequestParam(value = "id", required = false) String id,
