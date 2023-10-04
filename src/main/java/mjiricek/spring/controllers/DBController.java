@@ -9,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Controller class for handling GET, POST, PUT and DELETE http requests
@@ -27,7 +28,6 @@ public class DBController {
     private static final int VIEW_LENGTH = 10;
 
     /**
-     * TODO REFACTOR this method, maybe put reusable code into private method
      * TODO user input validation
      * Handler of the GET request on the URL "/" (with url arguments)
      * @param viewIndex value of url parameter reresenting which view is being card displayed
@@ -41,33 +41,9 @@ public class DBController {
                              @RequestParam(value = "entryName", required = false) String nameOfSearched,
                              @ModelAttribute EntityDTO entityDTO,
                              Model model) {
-        CopyOnWriteArrayList<DBEntity> shownEntries;
-        int numberOfViews;
-
-        if (searchOrCreate != null && searchOrCreate.equals("search")) {
-            if (nameOfSearched != null) { // search by name
-                // get the entities from db (search by name)
-                shownEntries = dbService.showEntriesByName(nameOfSearched); // TODO show only limited number of search results, but maybe still show position of the current view (example: 4/6)
-                // find how many view cards we have depending on the VIEW_LENGTH and dBSize
-                numberOfViews = (int) Math.ceil((double) shownEntries.size() / VIEW_LENGTH);
-            } else {
-                numberOfViews = 1; // before we search anything, empty results
-                shownEntries = null;
-            }
-        } else if (searchOrCreate != null && searchOrCreate.equals("create")) {
-            // find how many view cards we have depending on the VIEW_LENGTH and dBSize
-            numberOfViews = (int) Math.ceil((double) dbService.getDBSize() / VIEW_LENGTH);
-            viewIndex = numberOfViews - 1; // in create view - display the last entries
-            // get the entities from db (lookup by index)
-            shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, (viewIndex + 1) * VIEW_LENGTH);
-
-        } else { // "/"
-            // find how many view cards we have depending on the VIEW_LENGTH and dBSize
-            numberOfViews = (int) Math.ceil((double) dbService.getDBSize() / VIEW_LENGTH);
-            // get the entities from db (lookup by index)
-            shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, (viewIndex + 1) * VIEW_LENGTH);
-        }
-
+        // those two variables are used for taking data from model (database) and showing it to user
+        CopyOnWriteArrayList<DBEntity> shownEntries = null;
+        int numberOfViews = (int) Math.ceil((double) dbService.getDBSize() / VIEW_LENGTH); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
         // handle wrong index
         if (viewIndex < 0) {
             viewIndex = 0;
@@ -75,12 +51,38 @@ public class DBController {
             viewIndex = numberOfViews - 1;
         }
 
+        // conditions for how to fill in the above variables (based on URL path and one URL argument)
+        if (searchOrCreate == null) { // "/" url path
+            // get the entities from db (lookup by index)
+            shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, (viewIndex + 1) * VIEW_LENGTH);
+
+        } else if (searchOrCreate.equals("search")) { // "/search" url path
+            if (nameOfSearched != null) { // search by name
+                // get the entities from db (search by name)
+                CopyOnWriteArrayList<DBEntity> allEntitiesOfName = dbService.showEntriesByName(nameOfSearched);
+                // need to show only limited number of search results
+                shownEntries = allEntitiesOfName.stream().limit(VIEW_LENGTH).collect(Collectors.toCollection(CopyOnWriteArrayList::new));
+                // TODO ?? rozbiji posledni dva radky MVC konvence? Search by name a LIMIT je neco co by delala databaze.
+                // - ze stejneho duvodu to ale do service nechci zapracovavat, protoze ve fazi kdy budu mit napojeni databazi, tak bych to asi zahodil
+                // find how many view cards we have depending on the VIEW_LENGTH and allEntitiesOfName size
+                numberOfViews = (int) Math.ceil((double) allEntitiesOfName.size() / VIEW_LENGTH);
+            } else {
+                numberOfViews = 1;
+                viewIndex = 0; // will result 0/0 in pagination
+            }
+        } else if (searchOrCreate.equals("create")) { // "/create" url path
+            viewIndex = numberOfViews - 1; // in create view - display the last entries
+            // get the entities from db (lookup by index)
+            shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, (viewIndex + 1) * VIEW_LENGTH);
+        } // if no condition is met, something went wrong
+
+
         // fill in the data for the browse card (table view)
         model.addAttribute("entries", shownEntries);
         model.addAttribute("viewIndex", viewIndex);
         model.addAttribute("numberOfViews", numberOfViews);
 
-        // fill in the data for detail card
+        // fill in the data for the detail card
         if (id != null && !id.equals("null") && !id.equals("")) {
             DBEntity dbEntityCopy = dbService.showEntryById(Integer.parseInt(id));
             if (dbEntityCopy != null) {
