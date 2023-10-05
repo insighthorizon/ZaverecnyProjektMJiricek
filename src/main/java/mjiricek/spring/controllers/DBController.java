@@ -3,13 +3,13 @@ package mjiricek.spring.controllers;
 import mjiricek.spring.models.DBEntity;
 import mjiricek.spring.models.DBService;
 import mjiricek.spring.models.EntityDTO;
+import mjiricek.spring.models.QueryMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 /**
  * Controller class for handling GET, POST, PUT and DELETE http requests
@@ -22,15 +22,41 @@ public class DBController {
      */
     @Autowired
     private DBService dbService;
+
     /**
      * number of entries displayed in one view card
      */
     private static final int VIEW_LENGTH = 10;
 
+
+    int adjustIndexOutOfBounds(int index, int upperBound) {
+        if (index < 0) {
+            index = 0;
+        } else if (index >= upperBound) {
+            index = upperBound - 1;
+        }
+
+        return index;
+    }
+
+    int divideAndRoundUp(int dividend, int divisor) {
+        return (int) Math.ceil((double) dividend / divisor);
+    }
+
+    CopyOnWriteArrayList<DBEntity> getEntriesByIndexOrName(QueryMode queryMode, String nameOfSearched, int viewIndex, int viewLength) {
+        // switch is overkill, and we could just check nameOfSearched for null - but we may implement more ways to get data from DB in the database
+        // (searching according to different attributes, sorting and so on)
+        switch (queryMode) {
+            case GET_BY_INDEX -> { return dbService.showEntriesByIndexRange(viewIndex * viewLength, viewLength); }
+            case SEARCH_BY_NAME -> { return dbService.showEntriesByName(nameOfSearched, viewIndex * viewLength, viewLength); }
+        }
+        return null;
+    }
+
     /**
      * TODO user input validation
      * Handler of the GET request on the URL "/" (with url arguments)
-     * @param viewIndex value of url parameter reresenting which view is being card displayed
+     * @param viewIndex value of url parameter reresenting in which view is being card displayed (paging)
      * @param model Model parameter for data to be presented to the client
      * @return name of the html template being presented to the client
      */
@@ -41,43 +67,39 @@ public class DBController {
                              @RequestParam(value = "entryName", required = false) String nameOfSearched,
                              @ModelAttribute EntityDTO entityDTO,
                              Model model) {
-        // those two variables are used for taking data from model (database) and showing it to user
-        CopyOnWriteArrayList<DBEntity> shownEntries = null;
-        int numberOfViews = (int) Math.ceil((double) dbService.getDBSize() / VIEW_LENGTH); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
-        // handle wrong index
-        if (viewIndex < 0) {
-            viewIndex = 0;
-        } else if (viewIndex >= numberOfViews) {
-            viewIndex = numberOfViews - 1;
-        }
+        CopyOnWriteArrayList<DBEntity> shownEntries = null; // table data to fill in before presentation to client
+        int numberOfViews = 1; // for pagination
+        String templateToRender = null; // template name that will be returned by this method
+        QueryMode queryMode = null; // way to retrieve displayed data
 
         // conditions for how to fill in the above variables (based on URL path and one URL argument)
         if (searchOrCreate == null) { // "/" url path
-            // get the entities from db (lookup by index)
-            shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, (viewIndex + 1) * VIEW_LENGTH);
+            templateToRender = "index"; // index page will be rendered
+            queryMode = QueryMode.GET_BY_INDEX; // data for the browsing card is retriewed through plain indexing
+            numberOfViews = divideAndRoundUp(dbService.getDBSize(), VIEW_LENGTH); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
+            viewIndex = adjustIndexOutOfBounds(viewIndex, numberOfViews); // handle index out of bounds
 
         } else if (searchOrCreate.equals("search")) { // "/search" url path
-            if (nameOfSearched != null) { // search by name
-                // get the entities from db (search by name)
-                CopyOnWriteArrayList<DBEntity> allEntitiesOfName = dbService.showEntriesByName(nameOfSearched);
-                // need to show only limited number of search results
-                shownEntries = allEntitiesOfName.stream().limit(VIEW_LENGTH).collect(Collectors.toCollection(CopyOnWriteArrayList::new));
-                // TODO ?? rozbiji posledni dva radky MVC konvence? Search by name a LIMIT je neco co by delala databaze.
-                // - ze stejneho duvodu to ale do service nechci zapracovavat, protoze ve fazi kdy budu mit napojeni databazi, tak bych to asi zahodil
-                // find how many view cards we have depending on the VIEW_LENGTH and allEntitiesOfName size
-                numberOfViews = (int) Math.ceil((double) allEntitiesOfName.size() / VIEW_LENGTH);
-            } else {
-                numberOfViews = 1;
-                viewIndex = 0; // will result 0/0 in pagination
+            templateToRender = "search"; // search page will be rendered
+            queryMode = QueryMode.SEARCH_BY_NAME; // retrieve data for display through search by name
+            if (nameOfSearched == null) {
+                viewIndex = 1; // will result 1/1 in pagination
+            }
+            else { // search by name
+                // find how many view cards we have depending on the VIEW_LENGTH and how many ocurrences of searched name there are
+                numberOfViews = divideAndRoundUp(dbService.howManyEntriesOfName(nameOfSearched), VIEW_LENGTH);
+                viewIndex = adjustIndexOutOfBounds(viewIndex, numberOfViews); // handle index out of bounds
             }
         } else if (searchOrCreate.equals("create")) { // "/create" url path
-            viewIndex = numberOfViews - 1; // in create view - display the last entries
-            // get the entities from db (lookup by index)
-            shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, (viewIndex + 1) * VIEW_LENGTH);
-        } // if no condition is met, something went wrong
-
+            templateToRender = "create"; // create page will be rendered
+            queryMode = QueryMode.GET_BY_INDEX; // data for the browsing card is retriewed through plain indexing
+            numberOfViews = divideAndRoundUp(dbService.getDBSize(), VIEW_LENGTH); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
+            viewIndex = numberOfViews - 1; // in create page, jump to the last entries in view
+            model.addAttribute("displayDetail", true); // always display detail card for creating a new entry
+        } // else? TODO if no condition is met, something went wrong (that's probably wrong url address)
 
         // fill in the data for the browse card (table view)
+        shownEntries = getEntriesByIndexOrName(queryMode, nameOfSearched, viewIndex, VIEW_LENGTH); // get the entities from db
         model.addAttribute("entries", shownEntries);
         model.addAttribute("viewIndex", viewIndex);
         model.addAttribute("numberOfViews", numberOfViews);
@@ -86,7 +108,6 @@ public class DBController {
         if (id != null && !id.equals("null") && !id.equals("")) {
             DBEntity dbEntityCopy = dbService.showEntryById(Integer.parseInt(id));
             if (dbEntityCopy != null) {
-                model.addAttribute("entrySelected", true);
                 model.addAttribute("displayDetail", true);
                 model.addAttribute("selectedID", id);
                 entityDTO.setEntryName(dbEntityCopy.getEntryName());
@@ -94,14 +115,8 @@ public class DBController {
             }
         }
 
-        // decide which template to use based on the URL path variable
-        if (searchOrCreate == null || searchOrCreate.equals("") || searchOrCreate.equals("null"))
-            return "index";
-        if (searchOrCreate.equals("search"))
-            return "search";
 
-        model.addAttribute("displayDetail", true); // create view - always display detail card
-        return "create";
+        return templateToRender;
     }
 
     /**
@@ -156,7 +171,7 @@ public class DBController {
     public String createEntry(@ModelAttribute EntityDTO newEntryDTO,
                               Model model) {
 
-        dbService.addEntry(newEntryDTO.getEntryName(), newEntryDTO.getEntryContent());
+        dbService.addEntry(newEntryDTO);
         // next, we need to clean the DTO after the new entry has been saved
         // otherwise, the data will stay in the form
         newEntryDTO.setEntryName("");

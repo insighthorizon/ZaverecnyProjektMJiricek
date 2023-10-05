@@ -4,14 +4,14 @@ import mjiricek.spring.models.DBService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * This class defines how to instantiate and initialize
- * services with internal data and constants for controllers
- * - Allowing us to initialize everything though dependency injection
- * instead of relying on statics or over-specific initialization within constructor
- * - Each method returns an instance of an object or a primitive constant
- * to be injected
- */
+///**
+// * This class defines how to instantiate and initialize
+// * services with internal data and constants for controllers
+// * - Allowing us to initialize everything though dependency injection
+// * instead of relying on statics or over-specific initialization within constructor
+// * - Each method returns an instance of an object or a primitive constant
+// * to be injected
+// */
 //@Configuration
 //public class DBConfiguration {
 //    /**

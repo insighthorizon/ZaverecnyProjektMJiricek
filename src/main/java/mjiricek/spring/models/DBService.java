@@ -4,6 +4,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Model class implementing a table of a virtual database together with
@@ -47,11 +49,20 @@ public class DBService {
 
     /**
      * adds new entry in DB
-     * @param entryName entry attribute
-     * @param entryContent entry attribute
+     * @param entityDTO DTO with the attributes (entryName and entryContent) for the new db entry
      */
-    public void addEntry(String entryName, String entryContent) {
-        tableData.add(new DBEntity(nextId, entryName, entryContent));
+    public void addEntry(EntityDTO entityDTO) {
+        tableData.add(new DBEntity(nextId, entityDTO.getEntryName(), entityDTO.getEntryContent()));
+        nextId++;
+    }
+
+    /**
+     * add new intry into the DB
+     * @param name name attribute of the new entry
+     * @param content content attribute of the new entry
+     */
+    public void addEntry(String name, String content) {
+        tableData.add(new DBEntity(nextId, name, content));
         nextId++;
     }
 
@@ -82,26 +93,9 @@ public class DBService {
         if (originalEntry == null)
             return null;
 
-        return new DBEntity(originalEntry.getEntryId(),
-                originalEntry.getEntryName(),
-                originalEntry.getEntryContent());
+        return originalEntry.copy();
     }
 
-    /**
-     * Finds and copies (avoid exposing original) entry with given id
-     * @param index index of entry in the arraylist (not id)
-     * @return entry
-     */
-    public DBEntity showEntryByIndex(int index) {
-        DBEntity originalEntry = tableData.get(index);
-
-        if (originalEntry == null)
-            return null;
-
-        return new DBEntity(originalEntry.getEntryId(),
-                originalEntry.getEntryName(),
-                originalEntry.getEntryContent());
-    }
 
     /**
      * Finds an entry by id and deletes it (if it exists)
@@ -134,48 +128,74 @@ public class DBService {
      * If the index range reaches out of arraylist indices,
      * the copying still happens for the valid part of the index range.
      * - This means that when we input start or end out of bounds,
-     * we receive fewer elements thatn we asked for.
-     * @param start inclusive
-     * @param end exclusive
+     * we receive fewer elements than we asked for.
+     * @param startIndex index where to start the copy, inclusive
+     * @param copySize requested length of the copy
      * @return partial copy of the table given by the range
      */
-    public CopyOnWriteArrayList<DBEntity> showEntriesByIndexRange(int start, int end) {
+    public CopyOnWriteArrayList<DBEntity> showEntriesByIndexRange(int startIndex, int copySize) {
         CopyOnWriteArrayList<DBEntity> tableDataPartialCopy = new CopyOnWriteArrayList<>();
+        int dbSize = getDBSize();
 
-        if (start < getDBSize()) { // can't copy anything starting out of index bound
-            // prevent index out of bounds
-            if (start < 0)
-                start = 0;
-            if (end > getDBSize())
-                end = getDBSize();
+        if (startIndex < dbSize && copySize > 0) { // prevent nonsense
+            if (startIndex < 0) // can't start below zero
+                startIndex = 0;
+            if (startIndex + copySize > dbSize) // cant end beyond dbSize
+                copySize = dbSize - startIndex;
 
-            for (int i = start; i < end; i++) {
-                tableDataPartialCopy.add(showEntryByIndex(i));
+            for (int i = startIndex; i < copySize; i++) {
+                tableDataPartialCopy.add(tableData.get(i).copy());
             }
-        }
+        } // else TODO throw exception about nonsensical arguments
 
         return tableDataPartialCopy;
     }
 
     /**
-     * TODO add argument specifying max output length
-     * Search and copy entries with given name.
-     * Goes through the entire arraylist with linear search.
-     * (data is not ordered by name)
-     * ? We could maintain extra hashmap, mapping name to list of indices to entries.
+     * Returns number of ocurrences of an entry with a given name attribute value
+     * we receive fewer elements than we asked for.
+     * @param entryName name of the entry
+     * @return number of ocurrences with a given name
+     */
+    public int howManyEntriesOfName(String entryName) {
+        return (int)tableData.stream().filter(x -> x.getEntryName().equals(entryName)).count();
+    }
+
+    /**
+     * Search and copy entries with given name. The copy is also restricted by start and end indices.
+     * If the index range reaches out of arraylist indices,
+     * the copying still happens for the valid part of the index range.
+     * - This means that when we input start or end out of bounds,
      * @param entryName name to search by
+     * @param startIndex index where to start the copy, inclusive
+     * @param copySize requested length of the copy
      * @return list of found entries
      */
-    public CopyOnWriteArrayList<DBEntity> showEntriesByName(String entryName) {
-        CopyOnWriteArrayList<DBEntity> tableDataPartialCopy = new CopyOnWriteArrayList<>();
+    public CopyOnWriteArrayList<DBEntity> showEntriesByName(String entryName, int startIndex, int copySize) {
+        CopyOnWriteArrayList<DBEntity> entriesWithNamePartialCopy = new CopyOnWriteArrayList<>();
+        int dbSize = getDBSize();
 
-        for (DBEntity entry : tableData) {
-            if (entry.getEntryName().equals(entryName)) {
-                tableDataPartialCopy.add(showEntryByIndex(tableData.indexOf(entry)));
+        if (startIndex < dbSize && copySize > 0) { // prevent nonsense
+            if (startIndex < 0) // can't start below zero
+                startIndex = 0;
+            if (startIndex + copySize > dbSize) // cant end beyond dbSize
+                copySize = dbSize - startIndex;
+
+            // references to the entries of the given name, within requested index range
+            CopyOnWriteArrayList<DBEntity> tableDataPartialCopy = tableData.stream()
+                    .filter(x -> x.getEntryName().equals(entryName))
+                    .skip(startIndex)
+                    .limit(copySize)
+                    .collect(Collectors.toCollection(CopyOnWriteArrayList::new));
+
+            // creating copy of list for presentation (breaking the references to original entries)
+            for (DBEntity entry : tableDataPartialCopy) {
+                entriesWithNamePartialCopy.add(entry.copy());
             }
-        }
 
-        return tableDataPartialCopy;
+        } // else TODO throw exception about nonsensical arguments
+
+        return entriesWithNamePartialCopy;
     }
 
 }
