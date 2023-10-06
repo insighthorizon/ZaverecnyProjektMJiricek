@@ -3,13 +3,13 @@ package mjiricek.spring.controllers;
 import mjiricek.spring.models.DBEntity;
 import mjiricek.spring.models.DBService;
 import mjiricek.spring.models.EntityDTO;
-import mjiricek.spring.models.QueryMode;
+
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Controller class for handling GET, POST, PUT and DELETE http requests
@@ -26,10 +26,16 @@ public class DBController {
     /**
      * number of entries displayed in one view card
      */
-    private static final int VIEW_LENGTH = 10;
+    private static final int VIEW_LENGTH = 10; // can't be less than 1
 
 
-    int adjustIndexOutOfBounds(int index, int upperBound) {
+    /**
+     * Helper method to prevent paging (in the browse card) index out of bounds
+     * @param index paging index
+     * @param upperBound upper bound exclusive
+     * @return new paging index value
+     */
+    private int adjustIndexOutOfBounds(int index, int upperBound) {
         if (index < 0) {
             index = 0;
         } else if (index >= upperBound) {
@@ -39,18 +45,16 @@ public class DBController {
         return index;
     }
 
-    int divideAndRoundUp(int dividend, int divisor) {
-        return (int) Math.ceil((double) dividend / divisor);
-    }
-
-    CopyOnWriteArrayList<DBEntity> getEntriesByIndexOrName(QueryMode queryMode, String nameOfSearched, int viewIndex, int viewLength) {
-        // switch is overkill, and we could just check nameOfSearched for null - but we may implement more ways to get data from DB in the database
-        // (searching according to different attributes, sorting and so on)
-        switch (queryMode) {
-            case GET_BY_INDEX -> { return dbService.showEntriesByIndexRange(viewIndex * viewLength, viewLength); }
-            case SEARCH_BY_NAME -> { return dbService.showEntriesByName(nameOfSearched, viewIndex * viewLength, viewLength); }
-            default -> { return null; }
-        }
+    /**
+     * Helper method to compute how many views will be in browse card
+     * @param numberOfEntitiesToBrowse number of entities that can be browsed through
+     * @return number of views
+     */
+    private int computeNumberOfViews(int numberOfEntitiesToBrowse) {
+        // intentionally truncating with integer division
+        return numberOfEntitiesToBrowse == 0
+                ? 1
+                : (int) Math.ceil( (double)numberOfEntitiesToBrowse / VIEW_LENGTH );
     }
 
     /**
@@ -64,42 +68,43 @@ public class DBController {
     public String renderPage(@PathVariable(required = false) String searchOrCreate,
                              @RequestParam(value = "view", defaultValue = "0") int viewIndex,
                              @RequestParam(value = "id", required = false) String id,
-                             @RequestParam(value = "entryName", required = false) String nameOfSearched,
+                             @RequestParam(value = "searchedName", required = false) String searchedName,
                              @ModelAttribute EntityDTO entityDTO,
                              Model model) {
-        CopyOnWriteArrayList<DBEntity> shownEntries = null; // table data to fill in before presentation to client
+        // local variables initialized with default values (they are normally reassigned later)
+        CopyOnWriteArrayList<DBEntity> shownEntries = null; // get the entities of table from db
         int numberOfViews = 1; // for pagination
         String templateToRender = null; // template name that will be returned by this method
-        QueryMode queryMode = QueryMode.NO_ACTION; // way to retrieve displayed data
 
+        // following logic decides how to render the table and detail view for all valid pages (browse, search, create)
         // conditions for how to fill in the above variables (based on URL path and one URL argument)
         if (searchOrCreate == null) { // "/" url path
             templateToRender = "index"; // index page will be rendered
-            queryMode = QueryMode.GET_BY_INDEX; // data for the browsing card is retriewed through plain indexing
-            numberOfViews = divideAndRoundUp(dbService.getDBSize(), VIEW_LENGTH); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
+            numberOfViews = computeNumberOfViews(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
             viewIndex = adjustIndexOutOfBounds(viewIndex, numberOfViews); // handle index out of bounds
+            shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, VIEW_LENGTH);
 
         } else if (searchOrCreate.equals("search")) { // "/search" url path
             templateToRender = "search"; // search page will be rendered
-            queryMode = QueryMode.SEARCH_BY_NAME; // retrieve data for display through search by name
-            if (nameOfSearched == null) {
+            if (searchedName == null) { // no name to search was given
                 viewIndex = 0; // will result 1/1 in pagination
             }
-            else { // search by name
+            else { // name to search by was given
                 // find how many view cards we have depending on the VIEW_LENGTH and how many ocurrences of searched name there are
-                numberOfViews = divideAndRoundUp(dbService.howManyEntriesOfName(nameOfSearched), VIEW_LENGTH);
+                numberOfViews = computeNumberOfViews(dbService.howManyEntriesOfName(searchedName));
                 viewIndex = adjustIndexOutOfBounds(viewIndex, numberOfViews); // handle index out of bounds
+                shownEntries = dbService.showEntriesByName(searchedName, viewIndex * VIEW_LENGTH, VIEW_LENGTH);
+                model.addAttribute("searchedName", searchedName);
             }
         } else if (searchOrCreate.equals("create")) { // "/create" url path
             templateToRender = "create"; // create page will be rendered
-            queryMode = QueryMode.GET_BY_INDEX; // data for the browsing card is retriewed through plain indexing
-            numberOfViews = divideAndRoundUp(dbService.getDBSize(), VIEW_LENGTH); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
+            numberOfViews = computeNumberOfViews(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
             viewIndex = numberOfViews - 1; // in create page, jump to the last entries in view
+            shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, VIEW_LENGTH);
             model.addAttribute("displayDetail", true); // always display detail card for creating a new entry
-        } // else? TODO if no condition is met, something went wrong (that's probably wrong url address)
+        } // else no condition is met - wrong url address
 
         // fill in the data for the browse card (table view)
-        shownEntries = getEntriesByIndexOrName(queryMode, nameOfSearched, viewIndex, VIEW_LENGTH); // get the entities from db
         model.addAttribute("entries", shownEntries);
         model.addAttribute("viewIndex", viewIndex);
         model.addAttribute("numberOfViews", numberOfViews);
@@ -128,16 +133,18 @@ public class DBController {
      * @param model
      * @return
      */
-    @DeleteMapping({"/", "/search"})
+    @DeleteMapping({"/", "/{searchOrCreate}"})
     public String deleteEntry(@PathVariable(required = false) String searchOrCreate,
                               @RequestParam(value = "view", defaultValue = "0") int viewIndex,
                               @RequestParam(value = "id", required = false) String id,
+                              @RequestParam(value = "entryName", required = false) String searchedName,
                               @ModelAttribute EntityDTO selectedEntryDTO,
                               Model model) {
+        // for which url paths is this operation allowed
+        if (searchOrCreate == null || searchOrCreate.equals("search"))
+            dbService.deleteEntry(Integer.parseInt(id));
 
-        dbService.deleteEntry(Integer.parseInt(id));
-
-        return renderPage(searchOrCreate, viewIndex, id, null, selectedEntryDTO, model);
+        return renderPage(searchOrCreate, viewIndex, id, searchedName, selectedEntryDTO, model);
     }
 
     /**
@@ -149,16 +156,18 @@ public class DBController {
      * @param model
      * @return
      */
-    @PutMapping({"/", "/search"})
+    @PutMapping({"/", "/{searchOrCreate}"})
     public String updateEntry(@PathVariable(required = false) String searchOrCreate,
                               @RequestParam(value = "view", defaultValue = "0") int viewIndex,
                               @RequestParam(value = "id", required = false) String id,
+                              @RequestParam(value = "entryName", required = false) String searchedName,
                               @ModelAttribute EntityDTO selectedEntryDTO,
                               Model model) {
+        // for which url paths is this operation allowed
+        if (searchOrCreate == null || searchOrCreate.equals("search"))
+            dbService.updateEntry(Integer.parseInt(id), selectedEntryDTO.getEntryName(), selectedEntryDTO.getEntryContent());
 
-        dbService.updateEntry(Integer.parseInt(id), selectedEntryDTO.getEntryName(), selectedEntryDTO.getEntryContent());
-
-        return renderPage(searchOrCreate, viewIndex, id, null, selectedEntryDTO, model);
+        return renderPage(searchOrCreate, viewIndex, id, searchedName, selectedEntryDTO, model);
     }
 
     /**
