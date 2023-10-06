@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
 
 <!-- replaced with <head> containing page title, charset, link to css -->
-<div th:replace="~{fragments/fragments :: docHead}"></div>
+<div th:replace="~{fragments/fragments.html :: docHead}"></div>
 
 <!-- assignment of some variables in <body> scope in order to fill in fragments variables
       - those variables are specific to each template: index.html, search.html, create.html ...-->
@@ -14,13 +14,13 @@ formMethod='POST',
 formButton='Create'">
 
 <!-- replaced with <header> containing navbar -->
-<div th:replace="~{fragments/fragments :: navbar}"></div>
+<div th:replace="~{fragments/fragments.html :: navbar}"></div>
 <main>
     <!-- replaced by <section> containing table view card (table of entries to browse) -->
-    <div th:replace="~{fragments/fragments :: tableView}"></div>
+    <div th:replace="~{fragments/fragments.html :: tableView}"></div>
 
     <!-- detail view card - contains form with fields, offers update and delete operations -->
-    <div th:replace="~{fragments :: detailView}"></div>
+    <div th:replace="~{fragments/fragments.html :: detailView}"></div>
 
 </main>
 </body>

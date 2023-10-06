@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
 //    /**
 //     * Creates and initializes instance of DBService.
 //     * Since we are only simulating CRUD access to database,
-//     * there is some initialisation with initial data entries.
+//     * there is some initialization with initial data entries.
 //     * - for the DBController constructor
 //     * @return instance of DBService to be injected in controller
 //     */
