@@ -1,0 +1,3 @@
+Jeste to neni hotove ...
+
+TODO write readme

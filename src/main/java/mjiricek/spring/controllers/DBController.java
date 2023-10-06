@@ -49,8 +49,8 @@ public class DBController {
         switch (queryMode) {
             case GET_BY_INDEX -> { return dbService.showEntriesByIndexRange(viewIndex * viewLength, viewLength); }
             case SEARCH_BY_NAME -> { return dbService.showEntriesByName(nameOfSearched, viewIndex * viewLength, viewLength); }
+            default -> { return null; }
         }
-        return null;
     }
 
     /**
@@ -70,7 +70,7 @@ public class DBController {
         CopyOnWriteArrayList<DBEntity> shownEntries = null; // table data to fill in before presentation to client
         int numberOfViews = 1; // for pagination
         String templateToRender = null; // template name that will be returned by this method
-        QueryMode queryMode = null; // way to retrieve displayed data
+        QueryMode queryMode = QueryMode.NO_ACTION; // way to retrieve displayed data
 
         // conditions for how to fill in the above variables (based on URL path and one URL argument)
         if (searchOrCreate == null) { // "/" url path
@@ -83,7 +83,7 @@ public class DBController {
             templateToRender = "search"; // search page will be rendered
             queryMode = QueryMode.SEARCH_BY_NAME; // retrieve data for display through search by name
             if (nameOfSearched == null) {
-                viewIndex = 1; // will result 1/1 in pagination
+                viewIndex = 0; // will result 1/1 in pagination
             }
             else { // search by name
                 // find how many view cards we have depending on the VIEW_LENGTH and how many ocurrences of searched name there are

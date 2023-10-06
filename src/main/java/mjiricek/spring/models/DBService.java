@@ -143,7 +143,7 @@ public class DBService {
             if (startIndex + copySize > dbSize) // cant end beyond dbSize
                 copySize = dbSize - startIndex;
 
-            for (int i = startIndex; i < copySize; i++) {
+            for (int i = startIndex; i < startIndex + copySize; i++) {
                 tableDataPartialCopy.add(tableData.get(i).copy());
             }
         } // else TODO throw exception about nonsensical arguments
@@ -173,13 +173,14 @@ public class DBService {
      */
     public CopyOnWriteArrayList<DBEntity> showEntriesByName(String entryName, int startIndex, int copySize) {
         CopyOnWriteArrayList<DBEntity> entriesWithNamePartialCopy = new CopyOnWriteArrayList<>();
-        int dbSize = getDBSize();
 
-        if (startIndex < dbSize && copySize > 0) { // prevent nonsense
+        int numberOfNameOcurrences = howManyEntriesOfName(entryName);
+
+        if (startIndex < numberOfNameOcurrences && copySize > 0) { // prevent nonsense
             if (startIndex < 0) // can't start below zero
                 startIndex = 0;
-            if (startIndex + copySize > dbSize) // cant end beyond dbSize
-                copySize = dbSize - startIndex;
+            if (startIndex + copySize > numberOfNameOcurrences) // cant end beyond dbSize
+                copySize = numberOfNameOcurrences - startIndex;
 
             // references to the entries of the given name, within requested index range
             CopyOnWriteArrayList<DBEntity> tableDataPartialCopy = tableData.stream()
