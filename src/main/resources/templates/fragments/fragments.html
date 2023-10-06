@@ -1,5 +1,4 @@
 <!-- file with all the fragments (reusable code) used in this project's templates -->
-<!-- TODO fix traversing buttons and detail button not working in Search page -->
 <!-- TODO add buttons next to id# and Name attributes in table header for ascending and descending sorting -->
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
@@ -15,9 +14,9 @@
 <header th:fragment="navbar">
   <h3>Generic CRUD application</h3>
   <nav>
-    <a href="/" th:class="${browseLinkHTMLClass} + ' clickable'">Browse all entries</a>
-    <a href="/search" th:class="${searchLinkHTMLClass} + ' clickable'">Search entries by name</a>
-    <a href="/create" th:class="${createLinkHTMLClass} + ' clickable'">Create new entry</a>
+    <a href="/" th:class="${browseLinkClass} + ' clickable'">Browse all entries</a>
+    <a href="/search" th:class="${searchLinkClass} + ' clickable'">Search entries by name</a>
+    <a href="/create" th:class="${createLinkClass} + ' clickable'">Create new entry</a>
   </nav>
 </header>
 
@@ -35,39 +34,39 @@
       <div th:text="${entry.entryContent}"></div>
       <!-- button for opening the detail view of a given entry (table row): -->
       <!-- uses multiple url arguments -->
-      <a th:href="${extraPathForLinks}
-      + '?view=' + ${viewIndex}
-      + '&id=' + ${entry.entryId}
-      + '&searchedName=' + ${searchedName}" class="clickable">detail</a>
+      <a th:href="
+      '?view=' + ${viewIndex} +
+      '&id=' + ${entry.entryId} +
+      '&searchedName=' + ${searchedName}" class="clickable">detail</a>
     </li>
   </ol>
   <ul id="table-view-navigation"> <!-- buttons for Browsing though the table -->
     <!-- PREVIOUS button - has multiple URL arguments -->
-    <a th:href="${extraPathForLinks}
-    + '?view=' + ${viewIndex - 1}
-    + '&id=' +${selectedID}
-    + '&searchedName=' + ${searchedName}" class="previous-view clickable">PREVIOUS</a>
+    <a th:unless="${createLinkClass}" th:href="
+    '?view=' + ${viewIndex - 1} +
+    '&id=' +${selectedID} +
+    '&searchedName=' + ${searchedName}" class="previous-view clickable">PREVIOUS</a>
     <!-- indicator of the position of the table view within the full table, for example "4/6" -->
     <div th:text="${viewIndex + 1} + '/' + ${numberOfViews}" id="view-number"></div>
     <!-- NEXT button - has multiple URL arguments -->
-    <a th:href="${extraPathForLinks}
-    + '?view=' + ${viewIndex + 1}
-    + '&id=' +${selectedID}
-    + '&searchedName=' + ${searchedName}" class="next-view clickable">NEXT</a>
+    <a th:unless="${createLinkClass}" th:href="
+    '?view=' + ${viewIndex + 1} +
+    '&id=' +${selectedID} +
+    '&searchedName=' + ${searchedName}" class="next-view clickable">NEXT</a>
   </ul>
 </section>
 
 <!-- <section> containing form with data fields, reset and update buttons -->
 <section th:fragment="detailView" th:if="${displayDetail}" class="detail-view">
-  <p th:if="${createLinkHTMLClass}">NEW ENTRY:</p>
+  <p th:if="${createLinkClass}">NEW ENTRY:</p>
   <!-- form used for either update or create action -->
   <!-- uses multiple url arguments -->
-  <form th:action="${extraPathForAction}
-  + '?view=' + ${viewIndex}
-  + '&id=' +${selectedID}
-  + '&searchedName=' + ${searchedName}"
+  <form th:action="
+  '?view=' + ${viewIndex} +
+  '&id=' +${selectedID} +
+  '&searchedName=' + ${searchedName}"
         th:method="${formMethod}">
-    <span th:unless="${createLinkHTMLClass}" th:text="'id# ' + ${selectedID}"></span>
+    <span th:unless="${createLinkClass}" th:text="'id# ' + ${selectedID}"></span>
     <!-- data fields -->
     <label>Name: <input th:field="${entityDTO.entryName}" type="text"/></label>
     <label>Content: <input th:field="${entityDTO.entryContent}" type="text"/></label>
@@ -77,11 +76,11 @@
   </form>
   <!-- delete button for the detail view -->
   <!-- relies on multiple url arguments -->
-  <form th:unless="${createLinkHTMLClass}" th:fragment="deleteButton"
-        th:action="${extraPathForLinks}
-        + '?view=' + ${viewIndex}
-        + '&id=' +${selectedID}
-        + '&searchedName=' + ${searchedName}"
+  <form th:unless="${createLinkClass}" th:fragment="deleteButton"
+        th:action="
+        '?view=' + ${viewIndex} +
+        '&id=' +${selectedID} +
+        '&searchedName=' + ${searchedName}"
         th:method="DELETE">
     <input type="submit" value="Delete" class="clickable"/>
   </form>

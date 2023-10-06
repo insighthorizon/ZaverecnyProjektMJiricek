@@ -56,7 +56,7 @@ public class DBEntity extends EntityDTO implements Comparable<DBEntity> {
     /**
      * needed in order for the class to implement Comparable interface
      * @param otherEntry the object to be compared.
-     * @return "the value 0 if x == y; a value less than 0 if x < y; and a value greater than 0 if x > y"
+     * @return 0 if x equals y; a negative value if x less than y; and positive value if if x greater than y
      * (from Integer.compare() javadoc)
      */
     @Override

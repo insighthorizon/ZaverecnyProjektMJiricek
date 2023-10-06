@@ -19,28 +19,28 @@ header {
   background-color: Wheat;
 }
 
-header > nav {
+header>nav {
   list-style-type: none;
   display: flex;
   gap: 10px;
 }
 
 .clickable {
-    border: 1px solid black;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    color: Navy;
-    padding: 5px;
-    width: fit-content;
-    height: fit-content;
+  border: 1px solid black;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  color: Navy;
+  padding: 5px;
+  width: fit-content;
+  height: fit-content;
 }
 
 .clickable:hover {
   background-color: Thistle;
 }
 
-.table-view > ol > li > a {
+.table-view>ol>li>a {
   padding: 0 2px 0 2px;
 }
 
@@ -50,9 +50,9 @@ header > nav {
 }
 
 main {
- padding: calc(var(--navbar-height) + 10px) 10px 10px;
- background-color: DarkSlateGray;
- min-height: 100vh;
+  padding: calc(var(--navbar-height) + 10px) 10px 10px;
+  background-color: DarkSlateGray;
+  min-height: 100vh;
 }
 
 .table-view {
@@ -76,54 +76,54 @@ main {
 #table-view-navigation {
   padding: 1vh 5vw 1vh 5vw;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 
-#table-view-navigation > div {
+#table-view-navigation>div {
   font-weight: bold;
   font-color: Navy;
 }
 
-.table-view > ol {
+.table-view>ol {
   min-height: 35vh;
 }
 
 .grid-item {
- padding: 0 2px 0 2px;
+  padding: 0 2px 0 2px;
 }
 
 .grid-item:not(.grid-header) {
- margin-top: 2px;
+  margin-top: 2px;
 }
 
 .detail-view {
- background-color: Wheat;
- max-width: var(--card-max-width);
- margin: 20px auto auto auto;
- padding: 10px;
+  background-color: Wheat;
+  max-width: var(--card-max-width);
+  margin: 20px auto auto auto;
+  padding: 10px;
 }
 
-.detail-view > p {
- font-weight: bold;
- margin-bottom: 10px;
+.detail-view>p {
+  font-weight: bold;
+  margin-bottom: 10px;
 }
 
-.detail-view > form > label,
-.detail-view > form > span {
- display: grid;
- grid-template-columns: 5rem auto;
- margin-bottom: 10px;
+.detail-view>form>label,
+.detail-view>form>span {
+  display: grid;
+  grid-template-columns: 5rem auto;
+  margin-bottom: 10px;
 }
 
 .detail-view .clickable {
   font-size: 1rem;
 }
 
-.detail-view > form {
+.detail-view>form {
   display: inline;
 }
 
-.searchbar  {
+.searchbar {
   margin: auto;
 }
 
@@ -132,7 +132,7 @@ main {
   margin: 10px auto 10px auto;
 }
 
-.searchbar > form > label {
+.searchbar>form>label {
   color: White;
   font-weight: bold;
   font-size: 1.2rem;

@@ -137,7 +137,7 @@ public class DBController {
     public String deleteEntry(@PathVariable(required = false) String searchOrCreate,
                               @RequestParam(value = "view", defaultValue = "0") int viewIndex,
                               @RequestParam(value = "id", required = false) String id,
-                              @RequestParam(value = "entryName", required = false) String searchedName,
+                              @RequestParam(value = "searchedName", required = false) String searchedName,
                               @ModelAttribute EntityDTO selectedEntryDTO,
                               Model model) {
         // for which url paths is this operation allowed
@@ -160,7 +160,7 @@ public class DBController {
     public String updateEntry(@PathVariable(required = false) String searchOrCreate,
                               @RequestParam(value = "view", defaultValue = "0") int viewIndex,
                               @RequestParam(value = "id", required = false) String id,
-                              @RequestParam(value = "entryName", required = false) String searchedName,
+                              @RequestParam(value = "searchedName", required = false) String searchedName,
                               @ModelAttribute EntityDTO selectedEntryDTO,
                               Model model) {
         // for which url paths is this operation allowed
