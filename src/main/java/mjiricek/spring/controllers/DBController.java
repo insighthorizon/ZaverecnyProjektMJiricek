@@ -4,7 +4,7 @@ import mjiricek.spring.models.DBEntity;
 import mjiricek.spring.models.DBService;
 import mjiricek.spring.models.EntityDTO;
 
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -18,15 +18,23 @@ import org.springframework.web.bind.annotation.*;
 public class DBController {
     /**
      * service used by the controller
-     * - instance passed by dependency injection
+     * - we want all fields to be immutable, so dbService instance is passed by constructor
      */
-    @Autowired
-    private DBService dbService;
+    private final DBService dbService;
 
     /**
      * number of entries displayed in one view card
      */
     private static final int VIEW_LENGTH = 10; // can't be less than 1
+
+    /**
+     * constructor (Spring uses it in dependency injection)
+     * @param dbService database service
+     */
+    @Autowired
+    public DBController(DBService dbService) {
+        this.dbService = dbService;
+    }
 
 
     /**
@@ -72,20 +80,23 @@ public class DBController {
                              @ModelAttribute EntityDTO entityDTO,
                              Model model) {
         // local variables initialized with default values (they are normally reassigned later)
-        CopyOnWriteArrayList<DBEntity> shownEntries = null; // get the entities of table from db
+        ArrayList<DBEntity> shownEntries = null; // get the entities of table from db
         int numberOfViews = 1; // for pagination
         String templateToRender = null; // template name that will be returned by this method
+
+        if (viewIndex < 0)
+            viewIndex = 0;
 
         // following logic decides how to render the table and detail view for all valid pages (browse, search, create)
         // conditions for how to fill in the above variables (based on URL path and one URL argument)
         if (searchOrCreate == null) { // "/" url path
-            templateToRender = "index"; // index page will be rendered
+            templateToRender = "views/index"; // index page will be rendered
             numberOfViews = computeNumberOfViews(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
             viewIndex = adjustIndexOutOfBounds(viewIndex, numberOfViews); // handle index out of bounds
             shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, VIEW_LENGTH);
 
         } else if (searchOrCreate.equals("search")) { // "/search" url path
-            templateToRender = "search"; // search page will be rendered
+            templateToRender = "views/search"; // search page will be rendered
             if (searchedName == null) { // no name to search was given
                 viewIndex = 0; // will result 1/1 in pagination
             }
@@ -97,7 +108,7 @@ public class DBController {
                 model.addAttribute("searchedName", searchedName);
             }
         } else if (searchOrCreate.equals("create")) { // "/create" url path
-            templateToRender = "create"; // create page will be rendered
+            templateToRender = "views/create"; // create page will be rendered
             numberOfViews = computeNumberOfViews(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
             viewIndex = numberOfViews - 1; // in create page, jump to the last entries in view
             shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, VIEW_LENGTH);

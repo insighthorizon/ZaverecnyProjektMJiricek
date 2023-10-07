@@ -31,14 +31,15 @@
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
             <version>3.1.4</version>
         </dependency>
-
-        <!-- to get rid of the warning "Using deprecated '-debug' fallback for parameter name resolution. Compile the affected code with '-parameters' instead or avoid its introspection" -->
+        <!-- to get rid of the warning "Using deprecated '-debug' fallback for parameter name resolution. Compile the affected code with '-parameters' instead or avoid its i
+ntrospection" -->
         <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.11.0</version>
         </dependency>
+
 
     </dependencies>
 
@@ -56,5 +57,6 @@
             </plugin>
         </plugins>
     </build>
+
 
 </project>

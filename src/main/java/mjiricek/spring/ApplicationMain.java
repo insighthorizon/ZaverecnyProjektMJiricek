@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class ApplicationMain {
     public static void main(String[] args) {
-        // application entry point
+        // start the spring boot application
         SpringApplication.run(ApplicationMain.class, args);
     }
 }
