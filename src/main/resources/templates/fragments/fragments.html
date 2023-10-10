@@ -20,7 +20,7 @@
   </nav>
 </header>
 
-<!-- <section> containing table view card (table of entries to browse) -->
+<!-- <section> containing table view card with paging (table of entries to browse) -->
 <section th:fragment="tableView" class="table-view">
   <ol>
     <li class="grid-item grid-header"> <!-- table header - names of columns -->
@@ -29,14 +29,14 @@
       <div>Content</div>
     </li>
     <li th:each="entry: ${entries}" class="grid-item"> <!-- general table row - definition of data fields shown to client -->
-      <div th:text="${entry.entryId}"></div>
-      <div th:text="${entry.entryName}"></div>
-      <div th:text="${entry.entryContent}"></div>
+      <div th:text="${entry.entityId}"></div>
+      <div th:text="${entry.entityName}"></div>
+      <div th:text="${entry.entityContent}"></div>
       <!-- button for opening the detail view of a given entry (table row): -->
       <!-- uses multiple url arguments -->
       <a th:href="
       '?view=' + ${viewIndex} +
-      '&id=' + ${entry.entryId} +
+      '&id=' + ${entry.entityId} +
       '&searchedName=' + ${searchedName}" class="clickable">detail</a>
     </li>
   </ol>
@@ -68,8 +68,8 @@
         th:method="${formMethod}">
     <span th:unless="${createLinkClass}" th:text="'id# ' + ${selectedID}"></span>
     <!-- data fields -->
-    <label>Name: <input th:field="${entityDTO.entryName}" type="text"/></label>
-    <label>Content: <input th:field="${entityDTO.entryContent}" type="text"/></label>
+    <label>Name: <input th:field="${dBEntityDTO.entityName}" type="text"/></label>
+    <label>Content: <input th:field="${dBEntityDTO.entityContent}" type="text"/></label>
     <!-- form buttons reset and update/create -->
     <input type="reset" value="Reset" class="clickable">
     <input type="submit" th:value="${formButton}" class="clickable">

@@ -2,11 +2,12 @@ package mjiricek.spring.controllers;
 
 import mjiricek.spring.models.DBEntity;
 import mjiricek.spring.models.DBService;
-import mjiricek.spring.models.EntityDTO;
+import mjiricek.spring.models.DBEntityDTO;
 
 import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -23,16 +24,18 @@ public class DBController {
     private final DBService dbService;
 
     /**
-     * number of entries displayed in one view card
+     * number of entries displayed in one view card (one page in paging)
      */
-    private static final int VIEW_LENGTH = 10; // can't be less than 1
+    private final int pageLength; // can't be less than 1
 
     /**
      * constructor (Spring uses it in dependency injection)
-     * @param dbService database service
+     * @param pageLength
+     * @param dbService
      */
-    @Autowired
-    public DBController(DBService dbService) {
+    public DBController(@Qualifier("getPageLength") int pageLength,
+                        @Autowired DBService dbService) {
+        this.pageLength = pageLength;
         this.dbService = dbService;
     }
 
@@ -62,7 +65,40 @@ public class DBController {
         // intentionally truncating with integer division
         return numberOfEntitiesToBrowse == 0
                 ? 1
-                : (int) Math.ceil( (double)numberOfEntitiesToBrowse / VIEW_LENGTH );
+                : (int) Math.ceil( (double)numberOfEntitiesToBrowse / pageLength);
+    }
+
+    /**
+     * paging function
+     * - using "offset/limit" based paging
+     * - with a real DB, it would rely on "SELECT * FROM table ORDER BY id LIMIT pageLength OFFSET start"
+     * TODO later implement pagination by cursor (id) instead (SELECT * FROM table WHRE id > 10 ...)
+     * @param entities
+     * @param requestedPageIndex
+     * @param totalNumberOfBrowsedEntities
+     * @return
+     */
+    private ViewPage createViewPage(ArrayList<DBEntity> entities, int requestedPageIndex, int totalNumberOfBrowsedEntities) {
+        int numberOfViews = computeNumberOfViews(totalNumberOfBrowsedEntities); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
+        int viewIndex = adjustIndexOutOfBounds(requestedPageIndex, numberOfViews); // handle index out of bounds
+
+        return new ViewPage(entities, viewIndex, numberOfViews);
+    }
+
+    /**
+     * mutates the model attribute
+     * @param viewPage
+     * @param model
+     */
+    private void fillBrowseCardData(ViewPage viewPage, Model model) {
+
+    }
+
+    /**
+     * mutates model and entityDTO
+     */
+    private void fillDetailCardData(Model model, DBEntityDTO DBEntityDTO) {
+
     }
 
     /**
@@ -77,7 +113,7 @@ public class DBController {
                              @RequestParam(value = "view", defaultValue = "0") int viewIndex,
                              @RequestParam(value = "id", required = false) String id,
                              @RequestParam(value = "searchedName", required = false) String searchedName,
-                             @ModelAttribute EntityDTO entityDTO,
+                             @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
                              Model model) {
         // local variables initialized with default values (they are normally reassigned later)
         ArrayList<DBEntity> shownEntries = null; // get the entities of table from db
@@ -93,7 +129,7 @@ public class DBController {
             templateToRender = "views/index"; // index page will be rendered
             numberOfViews = computeNumberOfViews(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
             viewIndex = adjustIndexOutOfBounds(viewIndex, numberOfViews); // handle index out of bounds
-            shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, VIEW_LENGTH);
+            shownEntries = dbService.showEntriesByIndexRange(viewIndex * pageLength, pageLength);
 
         } else if (searchOrCreate.equals("search")) { // "/search" url path
             templateToRender = "views/search"; // search page will be rendered
@@ -104,14 +140,14 @@ public class DBController {
                 // find how many view cards we have depending on the VIEW_LENGTH and how many ocurrences of searched name there are
                 numberOfViews = computeNumberOfViews(dbService.howManyEntriesOfName(searchedName));
                 viewIndex = adjustIndexOutOfBounds(viewIndex, numberOfViews); // handle index out of bounds
-                shownEntries = dbService.showEntriesByName(searchedName, viewIndex * VIEW_LENGTH, VIEW_LENGTH);
+                shownEntries = dbService.showEntriesByName(searchedName, viewIndex * pageLength, pageLength);
                 model.addAttribute("searchedName", searchedName);
             }
         } else if (searchOrCreate.equals("create")) { // "/create" url path
             templateToRender = "views/create"; // create page will be rendered
             numberOfViews = computeNumberOfViews(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
             viewIndex = numberOfViews - 1; // in create page, jump to the last entries in view
-            shownEntries = dbService.showEntriesByIndexRange(viewIndex * VIEW_LENGTH, VIEW_LENGTH);
+            shownEntries = dbService.showEntriesByIndexRange(viewIndex * pageLength, pageLength);
             model.addAttribute("displayDetail", true); // always display detail card for creating a new entry
         } // else no condition is met - wrong url address
 
@@ -126,8 +162,7 @@ public class DBController {
             if (dbEntityCopy != null) {
                 model.addAttribute("displayDetail", true);
                 model.addAttribute("selectedID", id);
-                entityDTO.setEntryName(dbEntityCopy.getEntryName());
-                entityDTO.setEntryContent(dbEntityCopy.getEntryContent());
+                dbEntityDTO.setAllAttributes(dbEntityCopy);
             }
         }
 
@@ -140,7 +175,7 @@ public class DBController {
      * @param searchOrCreate
      * @param viewIndex
      * @param id
-     * @param selectedEntryDTO
+     * @param dbEntityDTO
      * @param model
      * @return
      */
@@ -149,13 +184,13 @@ public class DBController {
                               @RequestParam(value = "view", defaultValue = "0") int viewIndex,
                               @RequestParam(value = "id", required = false) String id,
                               @RequestParam(value = "searchedName", required = false) String searchedName,
-                              @ModelAttribute EntityDTO selectedEntryDTO,
+                              @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
                               Model model) {
         // for which url paths is this operation allowed
         if (searchOrCreate == null || searchOrCreate.equals("search"))
             dbService.deleteEntry(Integer.parseInt(id));
 
-        return renderPage(searchOrCreate, viewIndex, id, searchedName, selectedEntryDTO, model);
+        return renderPage(searchOrCreate, viewIndex, id, searchedName, dbEntityDTO, model);
     }
 
     /**
@@ -163,7 +198,7 @@ public class DBController {
      * @param searchOrCreate
      * @param viewIndex
      * @param id
-     * @param selectedEntryDTO
+     * @param dbEntityDTO
      * @param model
      * @return
      */
@@ -172,34 +207,33 @@ public class DBController {
                               @RequestParam(value = "view", defaultValue = "0") int viewIndex,
                               @RequestParam(value = "id", required = false) String id,
                               @RequestParam(value = "searchedName", required = false) String searchedName,
-                              @ModelAttribute EntityDTO selectedEntryDTO,
+                              @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
                               Model model) {
         // for which url paths is this operation allowed
         if (searchOrCreate == null || searchOrCreate.equals("search"))
-            dbService.updateEntry(Integer.parseInt(id), selectedEntryDTO.getEntryName(), selectedEntryDTO.getEntryContent());
+            dbService.updateEntry(Integer.parseInt(id), dbEntityDTO);
 
-        return renderPage(searchOrCreate, viewIndex, id, searchedName, selectedEntryDTO, model);
+        return renderPage(searchOrCreate, viewIndex, id, searchedName, dbEntityDTO, model);
     }
 
     /**
      * Creates new entity in the "database"
-     * @param newEntryDTO
+     * @param dbEntityDTO
      * @param model
      * @return
      */
     @PostMapping("/create")
-    public String createEntry(@ModelAttribute EntityDTO newEntryDTO,
+    public String createEntry(@ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
                               Model model) {
 
-        dbService.addEntry(newEntryDTO);
+        dbService.addEntry(dbEntityDTO);
         // next, we need to clean the DTO after the new entry has been saved
         // otherwise, the data will stay in the form
-        newEntryDTO.setEntryName("");
-        newEntryDTO.setEntryContent("");
+        dbEntityDTO.setAllAttributes(new DBEntityDTO());
 
         // create page should display the end of the table, that's why MAX_VALUE
         // no detail of item should be displayed
-        return renderPage("create", Integer.MAX_VALUE, null, null, newEntryDTO, model);
+        return renderPage("create", Integer.MAX_VALUE, null, null, dbEntityDTO, model);
     }
 
 }
