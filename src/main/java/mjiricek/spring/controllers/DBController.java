@@ -5,6 +5,7 @@ import mjiricek.spring.models.DBService;
 import mjiricek.spring.models.DBEntityDTO;
 
 import java.util.ArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * Controller class for handling GET, POST, PUT and DELETE http requests
+ * TODO user input validation
  */
 @Controller
 public class DBController {
@@ -24,12 +26,25 @@ public class DBController {
     private final DBService dbService;
 
     /**
-     * number of entries displayed in one view card (one page in paging)
+     * number of entries displayed in one page in browse card (one page in paging)
      */
     private final int pageLength; // can't be less than 1
 
     /**
+     * read/write lock
+     * There is need for synchronization (despite DBSimulator having synchronization already)
+     * because get mappings perform multiple reading operations in sequence
+     * and if the data changes during that, we may get race condition.
+     * - we want to block access to data only when some thread is writing (deleting, updating, adding)
+     * - to prevent reading when writting is going on in other thread
+     * - to allow as many threads reading as possible when no writting happens
+     */
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(true);
+
+
+    /**
      * constructor (Spring uses it in dependency injection)
+     *
      * @param pageLength
      * @param dbService
      */
@@ -39,9 +54,9 @@ public class DBController {
         this.dbService = dbService;
     }
 
-
     /**
-     * Helper method to prevent paging (in the browse card) index out of bounds
+     * Helper method to
+     *
      * @param index paging index
      * @param upperBound upper bound exclusive
      * @return new paging index value
@@ -58,166 +73,243 @@ public class DBController {
 
     /**
      * Helper method to compute how many views will be in browse card
+     *
      * @param numberOfEntitiesToBrowse number of entities that can be browsed through
      * @return number of views
      */
-    private int computeNumberOfViews(int numberOfEntitiesToBrowse) {
+    private int computeNumberOfPages(int numberOfEntitiesToBrowse) {
         // intentionally truncating with integer division
         return numberOfEntitiesToBrowse == 0
                 ? 1
-                : (int) Math.ceil( (double)numberOfEntitiesToBrowse / pageLength);
+                : (int) Math.ceil((double) numberOfEntitiesToBrowse / pageLength);
     }
 
     /**
-     * paging function
-     * - using "offset/limit" based paging
-     * - with a real DB, it would rely on "SELECT * FROM table ORDER BY id LIMIT pageLength OFFSET start"
-     * TODO later implement pagination by cursor (id) instead (SELECT * FROM table WHRE id > 10 ...)
-     * @param entities
-     * @param requestedPageIndex
-     * @param totalNumberOfBrowsedEntities
-     * @return
-     */
-    private ViewPage createViewPage(ArrayList<DBEntity> entities, int requestedPageIndex, int totalNumberOfBrowsedEntities) {
-        int numberOfViews = computeNumberOfViews(totalNumberOfBrowsedEntities); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
-        int viewIndex = adjustIndexOutOfBounds(requestedPageIndex, numberOfViews); // handle index out of bounds
-
-        return new ViewPage(entities, viewIndex, numberOfViews);
-    }
-
-    /**
-     * mutates the model attribute
-     * @param viewPage
+     * Browse card contains paging
+     * mutates Model and DBEntityDTO arguments
+     * fill in the data for the browse card (table view)
+     *
+     * @param pageContent
+     * @param pageIndex
+     * @param totalPages
      * @param model
      */
-    private void fillBrowseCardData(ViewPage viewPage, Model model) {
-
+    private void setTemplateAttributes(ArrayList<DBEntity> pageContent,
+                                       int pageIndex,
+                                       int totalPages,
+                                       Model model,
+                                       DBEntityDTO dBEntityDTO,
+                                       String selectedID) {
+        // set Browsing Card Attributes (fill in the data for the browsing card)
+        // attribute names correspond to the variables used in thymeleaf templates
+        model.addAttribute("entries", pageContent);
+        model.addAttribute("viewIndex", pageIndex);
+        model.addAttribute("numberOfViews", totalPages);
+        // set Detail Card Attributes (fill in the data for the detail card)
+        // DTO is also used in the template (for getting data from and to the client)
+        if (selectedID != null && !selectedID.equals("null") && !selectedID.equals("")) {
+            DBEntity dbEntityCopy = dbService.showEntryById(Integer.parseInt(selectedID));
+            if (dbEntityCopy != null) {
+                model.addAttribute("displayDetail", true);
+                model.addAttribute("selectedID", selectedID);
+                dBEntityDTO.setAllAttributes(dbEntityCopy);
+            }
+        }
     }
 
     /**
-     * mutates model and entityDTO
-     */
-    private void fillDetailCardData(Model model, DBEntityDTO DBEntityDTO) {
-
-    }
-
-    /**
-     * TODO user input validation
      * Handler of the GET request on the URL "/" (with url arguments)
+     *
      * @param viewIndex value of url parameter reresenting in which view is being card displayed (paging)
+     * @param model     Model parameter for data to be presented to the client
+     * @return name of the html template being presented to the client
+     */
+    @GetMapping("/")
+    public String renderIndexPage(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
+                                  @RequestParam(value = "id", required = false) String selectedID,
+                                  @ModelAttribute("dBEntityDTO") DBEntityDTO dBEntityDTO,
+                                  Model model) {
+        int pageIndex = Integer.parseInt(viewIndex); // TODO handle exception
+        rwLock.readLock().lock(); // start of synchronized code block (read)
+        try {
+            // handle paging
+            int numberOfPages = computeNumberOfPages(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
+            pageIndex = adjustIndexOutOfBounds(pageIndex, numberOfPages); // handle index out of bounds
+            ArrayList<DBEntity> shownEntries = dbService.showEntriesByIndexRange(pageIndex * pageLength, pageLength);
+            // set variables accessed by the template
+            setTemplateAttributes(shownEntries, pageIndex, numberOfPages, model, dBEntityDTO, selectedID);
+        } finally {
+            rwLock.readLock().unlock(); // end of synchronized code block (read)
+        }
+        return "views/index";
+    }
+
+    /**
+     * Handler of the GET request on the URL "/" (with url arguments)
+     *
+     * @param viewIndex value of url parameter reresenting in which view is being card displayed (paging)
+     * @param model     Model parameter for data to be presented to the client
+     * @return name of the html template being presented to the client
+     */
+    @GetMapping("/search")
+    public String renderSearchPage(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
+                                   @RequestParam(value = "id", required = false) String selectedID,
+                                   @RequestParam(value = "searchedName", required = false) String searchedName,
+                                   @ModelAttribute("dBEntityDTO") DBEntityDTO dBEntityDTO,
+                                   Model model) {
+        int pageIndex = Integer.parseInt(viewIndex); // TODO handle exception
+        int numberOfPages;
+        ArrayList<DBEntity> shownEntries;
+
+        rwLock.readLock().lock(); // start of synchronized code block (read)
+        try {
+            // paging depending on whether searchedName was given
+            if (searchedName == null) { // no name to search was given
+                numberOfPages = 1;
+                pageIndex = 0; // will result 1/1 in pagination
+                shownEntries = null;
+            } else { // name to search by was given
+                // find how many view cards we have depending on the VIEW_LENGTH and how many ocurrences of searched name there are
+                numberOfPages = computeNumberOfPages(dbService.howManyEntriesOfName(searchedName));
+                pageIndex = adjustIndexOutOfBounds(pageIndex, numberOfPages); // handle index out of bounds
+                shownEntries = dbService.showEntriesByName(searchedName, pageIndex * pageLength, pageLength);
+                model.addAttribute("searchedName", searchedName); // extra template attribute
+            }
+
+            setTemplateAttributes(shownEntries, pageIndex, numberOfPages, model, dBEntityDTO, selectedID);
+        } finally {
+            rwLock.readLock().unlock(); // end of synchronized code block (read)
+        }
+        return "views/search";
+    }
+
+    /**
+     * Handler of the GET request on the URL "/" (with url arguments)
+     *
      * @param model Model parameter for data to be presented to the client
      * @return name of the html template being presented to the client
      */
-    @GetMapping({"/", "/{searchOrCreate}"})
-    public String renderPage(@PathVariable(required = false) String searchOrCreate,
-                             @RequestParam(value = "view", defaultValue = "0") int viewIndex,
-                             @RequestParam(value = "id", required = false) String id,
-                             @RequestParam(value = "searchedName", required = false) String searchedName,
-                             @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
-                             Model model) {
-        // local variables initialized with default values (they are normally reassigned later)
-        ArrayList<DBEntity> shownEntries = null; // get the entities of table from db
-        int numberOfViews = 1; // for pagination
-        String templateToRender = null; // template name that will be returned by this method
-
-        if (viewIndex < 0)
-            viewIndex = 0;
-
-        // following logic decides how to render the table and detail view for all valid pages (browse, search, create)
-        // conditions for how to fill in the above variables (based on URL path and one URL argument)
-        if (searchOrCreate == null) { // "/" url path
-            templateToRender = "views/index"; // index page will be rendered
-            numberOfViews = computeNumberOfViews(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
-            viewIndex = adjustIndexOutOfBounds(viewIndex, numberOfViews); // handle index out of bounds
-            shownEntries = dbService.showEntriesByIndexRange(viewIndex * pageLength, pageLength);
-
-        } else if (searchOrCreate.equals("search")) { // "/search" url path
-            templateToRender = "views/search"; // search page will be rendered
-            if (searchedName == null) { // no name to search was given
-                viewIndex = 0; // will result 1/1 in pagination
-            }
-            else { // name to search by was given
-                // find how many view cards we have depending on the VIEW_LENGTH and how many ocurrences of searched name there are
-                numberOfViews = computeNumberOfViews(dbService.howManyEntriesOfName(searchedName));
-                viewIndex = adjustIndexOutOfBounds(viewIndex, numberOfViews); // handle index out of bounds
-                shownEntries = dbService.showEntriesByName(searchedName, viewIndex * pageLength, pageLength);
-                model.addAttribute("searchedName", searchedName);
-            }
-        } else if (searchOrCreate.equals("create")) { // "/create" url path
-            templateToRender = "views/create"; // create page will be rendered
-            numberOfViews = computeNumberOfViews(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
-            viewIndex = numberOfViews - 1; // in create page, jump to the last entries in view
-            shownEntries = dbService.showEntriesByIndexRange(viewIndex * pageLength, pageLength);
+    @GetMapping("/create")
+    public String renderCreatePage(@RequestParam(value = "id", required = false) String selectedID,
+                                   @ModelAttribute("dBEntityDTO") DBEntityDTO dBEntityDTO,
+                                   Model model) {
+        rwLock.readLock().lock(); // start of synchronized code block (read)
+        try {
+            // handling paging
+            int numberOfPages = computeNumberOfPages(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
+            int pageIndex = numberOfPages - 1; // in create page, jump to the last entries in view
+            ArrayList<DBEntity> shownEntries = dbService.showEntriesByIndexRange(pageIndex * pageLength, pageLength);
+            // filling in variables for the template
             model.addAttribute("displayDetail", true); // always display detail card for creating a new entry
-        } // else no condition is met - wrong url address
-
-        // fill in the data for the browse card (table view)
-        model.addAttribute("entries", shownEntries);
-        model.addAttribute("viewIndex", viewIndex);
-        model.addAttribute("numberOfViews", numberOfViews);
-
-        // fill in the data for the detail card
-        if (id != null && !id.equals("null") && !id.equals("")) {
-            DBEntity dbEntityCopy = dbService.showEntryById(Integer.parseInt(id));
-            if (dbEntityCopy != null) {
-                model.addAttribute("displayDetail", true);
-                model.addAttribute("selectedID", id);
-                dbEntityDTO.setAllAttributes(dbEntityCopy);
-            }
+            setTemplateAttributes(shownEntries, pageIndex, numberOfPages, model, dBEntityDTO, selectedID);
+        } finally {
+            rwLock.readLock().unlock(); // end of synchronized code block (read)
         }
 
-
-        return templateToRender;
+        return "views/create";
     }
 
     /**
      * TODO handle "entry not found"
-     * @param searchOrCreate
+     *
      * @param viewIndex
-     * @param id
+     * @param selectedID
      * @param dbEntityDTO
      * @param model
      * @return
      */
-    @DeleteMapping({"/", "/{searchOrCreate}"})
-    public String deleteEntry(@PathVariable(required = false) String searchOrCreate,
-                              @RequestParam(value = "view", defaultValue = "0") int viewIndex,
-                              @RequestParam(value = "id", required = false) String id,
-                              @RequestParam(value = "searchedName", required = false) String searchedName,
-                              @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
-                              Model model) {
-        // for which url paths is this operation allowed
-        if (searchOrCreate == null || searchOrCreate.equals("search"))
-            dbService.deleteEntry(Integer.parseInt(id));
+    @DeleteMapping("/")
+    public String deleteAtIndexPage(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
+                                    @RequestParam(value = "id", required = false) String selectedID,
+                                    @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
+                                    Model model) {
+        rwLock.writeLock().lock(); // start of synchronized code block (write)
+        try {
+            dbService.deleteEntry(Integer.parseInt(selectedID)); // TODO handle exception
+        } finally {
+            rwLock.writeLock().unlock(); // end of synchronized code block (write)
+        }
 
-        return renderPage(searchOrCreate, viewIndex, id, searchedName, dbEntityDTO, model);
+        return renderIndexPage(viewIndex, selectedID, dbEntityDTO, model);
     }
 
     /**
      * TODO handle "entry not found"
-     * @param searchOrCreate
+     *
      * @param viewIndex
-     * @param id
+     * @param selectedID
      * @param dbEntityDTO
      * @param model
      * @return
      */
-    @PutMapping({"/", "/{searchOrCreate}"})
-    public String updateEntry(@PathVariable(required = false) String searchOrCreate,
-                              @RequestParam(value = "view", defaultValue = "0") int viewIndex,
-                              @RequestParam(value = "id", required = false) String id,
-                              @RequestParam(value = "searchedName", required = false) String searchedName,
-                              @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
-                              Model model) {
-        // for which url paths is this operation allowed
-        if (searchOrCreate == null || searchOrCreate.equals("search"))
-            dbService.updateEntry(Integer.parseInt(id), dbEntityDTO);
+    @DeleteMapping("/search")
+    public String deleteAtSearchPage(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
+                                     @RequestParam(value = "id", required = false) String selectedID,
+                                     @RequestParam(value = "searchedName", required = false) String searchedName,
+                                     @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
+                                     Model model) {
+        rwLock.writeLock().lock(); // start of synchronized code block (write)
+        try {
+            dbService.deleteEntry(Integer.parseInt(selectedID)); // TODO handle exception
+        } finally {
+            rwLock.writeLock().unlock(); // end of synchronized code block (write)
+        }
 
-        return renderPage(searchOrCreate, viewIndex, id, searchedName, dbEntityDTO, model);
+        return renderSearchPage(viewIndex, selectedID, searchedName, dbEntityDTO, model);
+    }
+
+    /**
+     * TODO handle "entry not found"
+     *
+     * @param viewIndex
+     * @param selectedID
+     * @param dbEntityDTO
+     * @param model
+     * @return
+     */
+    @PutMapping("/")
+    public String updateAtIndex(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
+                                @RequestParam(value = "id", required = false) String selectedID,
+                                @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
+                                Model model) {
+        rwLock.writeLock().lock(); // start of synchronized code block (write)
+        try {
+            dbService.updateEntry(Integer.parseInt(selectedID), dbEntityDTO);
+        } finally {
+            rwLock.writeLock().unlock(); // end of synchronized code block (write)
+        }
+
+        return renderIndexPage(viewIndex, selectedID, dbEntityDTO, model);
+    }
+
+    /**
+     *
+     * @param viewIndex
+     * @param selectedID
+     * @param searchedName
+     * @param dbEntityDTO
+     * @param model
+     * @return
+     */
+    @PutMapping("/search")
+    public String updateAtSearch(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
+                                 @RequestParam(value = "id", required = false) String selectedID,
+                                 @RequestParam(value = "searchedName", required = false) String searchedName,
+                                 @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
+                                 Model model) {
+        rwLock.writeLock().lock(); // start of synchronized code block (write)
+        try {
+            dbService.updateEntry(Integer.parseInt(selectedID), dbEntityDTO);
+        } finally {
+            rwLock.writeLock().unlock(); // end of synchronized code block (write)
+        }
+
+        return renderSearchPage(viewIndex, selectedID, searchedName, dbEntityDTO, model);
     }
 
     /**
      * Creates new entity in the "database"
+     *
      * @param dbEntityDTO
      * @param model
      * @return
@@ -225,15 +317,18 @@ public class DBController {
     @PostMapping("/create")
     public String createEntry(@ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
                               Model model) {
-
-        dbService.addEntry(dbEntityDTO);
+        rwLock.writeLock().lock(); // start of synchronized code block (write)
+        try {
+            dbService.addEntry(dbEntityDTO);
+        } finally {
+            rwLock.writeLock().unlock(); // end of synchronized code block (write)
+        }
         // next, we need to clean the DTO after the new entry has been saved
         // otherwise, the data will stay in the form
         dbEntityDTO.setAllAttributes(new DBEntityDTO());
 
-        // create page should display the end of the table, that's why MAX_VALUE
         // no detail of item should be displayed
-        return renderPage("create", Integer.MAX_VALUE, null, null, dbEntityDTO, model);
+        return renderCreatePage(null, dbEntityDTO, model);
     }
 
 }

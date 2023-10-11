@@ -40,7 +40,7 @@ public class DBSimulator {
 
     /**
      * read/write lock
-     * - we want to allow only on thread writing (deleting, updating, adding)
+     * - we want to block access to data only when some thread is writing (deleting, updating, adding)
      * - to prevent reading when writting is going on in other thread
      * - to allow as many threads reading as possible when no writting happens
      */
@@ -173,7 +173,7 @@ public class DBSimulator {
      * @return partial copy of the table given by the range
      */
     public ArrayList<DBEntity> getTableSubcopy(int startIndex, int maxLength) {
-        rwLock.readLock().lock(); // start of synchronized code block (read)
+        rwLock.readLock().lock();  // start of synchronized code block (read)
         try {
             return nutritionalDBTable.stream()
                     .skip(startIndex)
