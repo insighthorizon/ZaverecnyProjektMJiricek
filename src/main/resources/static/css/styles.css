@@ -58,13 +58,13 @@ main {
 .table-view {
   list-style: none;
   background-color: Wheat;
-  max-width: 500px;
+  max-width: 640px;
   margin: auto;
 }
 
 .grid-item {
   display: grid;
-  grid-template-columns: 3rem 5rem 8rem auto;
+  grid-template-columns: 3rem 8rem 6rem 6rem 6rem 6rem 4rem;
 }
 
 .grid-header {
@@ -79,12 +79,12 @@ main {
   justify-content: space-around;
 }
 
-#table-view-navigation>div {
+#table-view-navigation > div {
   font-weight: bold;
   font-color: Navy;
 }
 
-.table-view>ol {
+.table-view > ol {
   min-height: 35vh;
 }
 
@@ -103,7 +103,7 @@ main {
   padding: 10px;
 }
 
-.detail-view>p {
+.detail-view > p {
   font-weight: bold;
   margin-bottom: 10px;
 }
@@ -111,7 +111,7 @@ main {
 .detail-view>form>label,
 .detail-view>form>span {
   display: grid;
-  grid-template-columns: 5rem auto;
+  grid-template-columns: 6rem auto;
   margin-bottom: 10px;
 }
 

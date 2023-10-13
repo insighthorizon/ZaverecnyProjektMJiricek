@@ -1,5 +1,7 @@
 package mjiricek.spring.models;
 
+import mjiricek.spring.models.entities.Food;
+import mjiricek.spring.models.entities.FoodData;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -36,7 +38,7 @@ public class DBSimulator {
      * thread safety on higher level anyway.
      * (Need for locking all DBSErvice fields at once for some entire blocks of code)
      */
-    private final ArrayList<DBEntity> nutritionalDBTable = new ArrayList<>();
+    private final ArrayList<Food> nutritionalDBTable = new ArrayList<>();
 
     /**
      * read/write lock
@@ -68,7 +70,7 @@ public class DBSimulator {
     public int getNameCount(String entryName) {
         rwLock.readLock().lock(); // start of synchronized code block (read)
         try {
-            return (int) nutritionalDBTable.stream().filter(x -> x.getEntityName().equals(entryName)).count();
+            return (int) nutritionalDBTable.stream().filter(x -> x.getFoodName().equals(entryName)).count();
         } finally {
             rwLock.readLock().unlock(); // end of synchronzied code block (read)
         }
@@ -76,12 +78,12 @@ public class DBSimulator {
 
     /**
      * adds new entity in DB
-     * @param DBEntityDTO DTO with the attributes (entryName and entryContent) for the new db entry
+     * @param FoodData DTO with the attributes (entryName and entryContent) for the new db entry
      */
-    public void addEntity(DBEntityDTO DBEntityDTO) {
+    public void addEntity(FoodData FoodData) {
         rwLock.writeLock().lock(); // start of sychronized code block (write)
         try { // add the new entry
-            nutritionalDBTable.add(new DBEntity(nextId, DBEntityDTO));
+            nutritionalDBTable.add(new Food(nextId, FoodData));
             nextId++; // unique id counter incrementation - warning about non-atomicity is ok since non-atomic operations are performed inside of synchronization block
         } finally {
             rwLock.writeLock().unlock(); // end of synchronized code block (write)
@@ -93,10 +95,10 @@ public class DBSimulator {
      * @param id unique id of the entry
      * @return found entry (can be null)
      */
-    private DBEntity findEntityById(int id) {
+    private Food findEntityById(int id) {
         rwLock.readLock().lock(); // start of synchronized code block (read)
         try { // find and return the id
-            int index = Collections.binarySearch(nutritionalDBTable, new DBEntity(id, new DBEntityDTO()));
+            int index = Collections.binarySearch(nutritionalDBTable, new Food(id, new FoodData()));
             return (index >= 0) ? nutritionalDBTable.get(index) : null;
         } finally {
             rwLock.readLock().unlock(); // end of synchronized code block (read)
@@ -114,10 +116,10 @@ public class DBSimulator {
      * @param id entry id
      * @return copy of the entry with desired id
      */
-    public DBEntity getEntityCopyById(int id) {
+    public Food getEntityCopyById(int id) {
         rwLock.readLock().lock();  // start of synchronized code block (read)
         try { // try to find the entity
-            DBEntity originalEntry = findEntityById(id);
+            Food originalEntry = findEntityById(id);
 
             if (originalEntry == null)
                 return null;
@@ -145,17 +147,17 @@ public class DBSimulator {
     /**
      * Finds an entry by id and changes its attributes to provided values (if found)
      * @param id id of an udpated entry
-     * @param DBEntityDTO new attribute values of the entry
+     * @param FoodData new attribute values of the entry
      * @return true if entry found, false if not
      */
-    public boolean updateEntityById(int id, DBEntityDTO DBEntityDTO) {
+    public boolean updateEntityById(int id, FoodData FoodData) {
         rwLock.writeLock().lock();  // start of synchronized code block (write)
         try { // try to update the entity
-            DBEntity modifiedEntity = findEntityById(id);
+            Food modifiedEntity = findEntityById(id);
             if (modifiedEntity == null)
                 return false;
 
-            modifiedEntity.setAllAttributes(DBEntityDTO);
+            modifiedEntity.setAllAttributes(FoodData);
             return true;
         } finally {
             rwLock.writeLock().unlock(); // end of synchronized code block (write)
@@ -172,13 +174,13 @@ public class DBSimulator {
      * @param maxLength   requested length of the copy
      * @return partial copy of the table given by the range
      */
-    public ArrayList<DBEntity> getTableSubcopy(int startIndex, int maxLength) {
+    public ArrayList<Food> getTableSubcopy(int startIndex, int maxLength) {
         rwLock.readLock().lock();  // start of synchronized code block (read)
         try {
             return nutritionalDBTable.stream()
                     .skip(startIndex)
                     .limit(maxLength)
-                    .map(DBEntity::copy) // creating copy - breaking the references to original entries
+                    .map(Food::copy) // creating copy - breaking the references to original entries
                     .collect(Collectors.toCollection(ArrayList::new));
         } finally {
             rwLock.readLock().unlock(); // end of synchronized code block (read)
@@ -196,14 +198,14 @@ public class DBSimulator {
      * @param maxLength requested length of the copy
      * @return list of found entries
      */
-    public ArrayList<DBEntity> getTableSubcopy(String entryName, int startIndex, int maxLength) {
+    public ArrayList<Food> getTableSubcopy(String entryName, int startIndex, int maxLength) {
         rwLock.readLock().lock(); // start of synchronized code block (read)
         try {
             return nutritionalDBTable.stream()
-                    .filter(x -> x.getEntityName().equals(entryName)) // find entries with the required name
+                    .filter(x -> x.getFoodName().equals(entryName)) // find entries with the required name
                     .skip(startIndex)
                     .limit(maxLength)
-                    .map(DBEntity::copy) // creating copy - breaking the references to original entries
+                    .map(Food::copy) // creating copy - breaking the references to original entries
                     .collect(Collectors.toCollection(ArrayList::new));
         } finally {
             rwLock.readLock().unlock(); // end of synchronized code block (read)

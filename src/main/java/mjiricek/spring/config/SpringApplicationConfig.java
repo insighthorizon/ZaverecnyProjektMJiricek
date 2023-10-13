@@ -1,6 +1,6 @@
 package mjiricek.spring.config;
 
-import mjiricek.spring.models.DBEntityDTO;
+import mjiricek.spring.models.entities.FoodData;
 import mjiricek.spring.models.DBSimulator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,13 +27,14 @@ public class SpringApplicationConfig {
     public DBSimulator createDBSimulator() {
         DBSimulator dbSimulator = new DBSimulator();
 
-        dbSimulator.addEntity(new DBEntityDTO("rohliiiii iiiiiiiiii iiiiiiiik", "8 60 10"));
-        for (char i = 'a'; i <= 'z'; i++) {
-            dbSimulator.addEntity(new DBEntityDTO(String.valueOf(i), String.valueOf(i) + i + i + i + i + i));
-        }
-        dbSimulator.addEntity(new DBEntityDTO("rohliiiiii ooooooo iiiiiiiik", "8 60 10"));
-        for (char i = 'a'; i <= 'z'; i++) {
-            dbSimulator.addEntity(new DBEntityDTO(String.valueOf(i), String.valueOf(i) + i + i + i + i + i));
+        // innitial data
+        dbSimulator.addEntity(new FoodData("white roll", 310, 9.78, 57.47, 3.68));
+        dbSimulator.addEntity(new FoodData("bread", 244, 8, 45, 1.1));
+        dbSimulator.addEntity(new FoodData("chicken egg", 151, 12.38, 0.94, 10.87));
+        // TODO add more foods
+
+        for (char i = 'A'; i <= 'z'; i++) {
+            dbSimulator.addEntity(new FoodData((String.valueOf(i) + i + i + i + i + i), i, i, i, i));
         }
 
         return dbSimulator;

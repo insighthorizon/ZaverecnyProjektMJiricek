@@ -12,11 +12,11 @@
 
 <!-- <header> containing "navbar" -->
 <header th:fragment="navbar">
-  <h3>Generic CRUD application</h3>
+  <h3>Nutritional database</h3>
   <nav>
-    <a href="/" th:class="${browseLinkClass} + ' clickable'">Browse all entries</a>
-    <a href="/search" th:class="${searchLinkClass} + ' clickable'">Search entries by name</a>
-    <a href="/create" th:class="${createLinkClass} + ' clickable'">Create new entry</a>
+    <a href="/" th:class="${browseLinkClass} + ' clickable'">Browse all foods</a>
+    <a href="/search" th:class="${searchLinkClass} + ' clickable'">Search foods by name</a>
+    <a href="/create" th:class="${createLinkClass} + ' clickable'">Create new food</a>
   </nav>
 </header>
 
@@ -24,19 +24,25 @@
 <section th:fragment="tableView" class="table-view">
   <ol>
     <li class="grid-item grid-header"> <!-- table header - names of columns -->
-      <div>id#</div>
+      <div>ID#</div>
       <div>Name</div>
-      <div>Content</div>
+      <div>Kcal/100g</div>
+      <div>Protein/100g</div>
+      <div>Carb/100g</div>
+      <div>Fat/100g</div>
     </li>
     <li th:each="entry: ${entries}" class="grid-item"> <!-- general table row - definition of data fields shown to client -->
-      <div th:text="${entry.entityId}"></div>
-      <div th:text="${entry.entityName}"></div>
-      <div th:text="${entry.entityContent}"></div>
+      <div th:text="${entry.foodID}"></div>
+      <div th:text="${entry.foodName}"></div>
+      <div th:text="${entry.kcalContent}"></div>
+      <div th:text="${entry.proteinContent}"></div>
+      <div th:text="${entry.carbContent}"></div>
+      <div th:text="${entry.fatContent}"></div>
       <!-- button for opening the detail view of a given entry (table row): -->
       <!-- uses multiple url arguments -->
       <a th:href="
       '?view=' + ${viewIndex} +
-      '&id=' + ${entry.entityId} +
+      '&id=' + ${entry.foodID} +
       '&searchedName=' + ${searchedName}" class="clickable">detail</a>
     </li>
   </ol>
@@ -58,7 +64,7 @@
 
 <!-- <section> containing form with data fields, reset and update buttons -->
 <section th:fragment="detailView" th:if="${displayDetail}" class="detail-view">
-  <p th:if="${createLinkClass}">NEW ENTRY:</p>
+  <p th:if="${createLinkClass}">NEW FOOD:</p>
   <!-- form used for either update or create action -->
   <!-- uses multiple url arguments -->
   <form th:action="
@@ -68,8 +74,11 @@
         th:method="${formMethod}">
     <span th:unless="${createLinkClass}" th:text="'id# ' + ${selectedID}"></span>
     <!-- data fields -->
-    <label>Name: <input th:field="${dBEntityDTO.entityName}" type="text"/></label>
-    <label>Content: <input th:field="${dBEntityDTO.entityContent}" type="text"/></label>
+    <label>Name: <input th:field="${foodDTO.foodName}" type="text"/></label>
+    <label>Kcal/100g: <input th:field="${foodDTO.kcalContent}" type="text"/></label>
+    <label>Protein/100g: <input th:field="${foodDTO.proteinContent}" type="text"/></label>
+    <label>Carb/100g: <input th:field="${foodDTO.carbContent}" type="text"/></label>
+    <label>Fat/100g: <input th:field="${foodDTO.fatContent}" type="text"/></label>
     <!-- form buttons reset and update/create -->
     <input type="reset" value="Reset" class="clickable">
     <input type="submit" th:value="${formButton}" class="clickable">

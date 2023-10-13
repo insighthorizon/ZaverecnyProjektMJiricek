@@ -1,5 +1,8 @@
 package mjiricek.spring.models;
 
+import mjiricek.spring.models.entities.Food;
+import mjiricek.spring.models.entities.FoodDTO;
+import mjiricek.spring.models.entities.FoodData;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +37,35 @@ public class DBService {
     }
 
     /**
+     * transform DTO into FoodData
+     * - performs parsing and logical input validation (no negative weights)
+     *
+     * @param foodDTO
+     * @return
+     */
+    public FoodData dTOToFood(FoodDTO foodDTO) throws IllegalArgumentException {
+        // parsing
+        try {
+            double kcal = Double.parseDouble(foodDTO.getKcalContent());
+            double prot = Double.parseDouble(foodDTO.getProteinContent());
+            double carb = Double.parseDouble(foodDTO.getCarbContent());
+            double fat = Double.parseDouble(foodDTO.getFatContent());
+
+            // validating that weight is not negative
+            if (kcal < 0 || prot < 0 || carb < 0 || fat < 0) {
+                throw new IllegalArgumentException();
+            }
+
+            return new FoodData(foodDTO.getFoodName(), kcal, prot, carb, fat);
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Nutrient values must be non-negative numbers.");
+        }
+    }
+
+    /**
      * returns number of entries in the database
+     *
      * @return number of entries in DB
      */
     public int getDBSize() {
@@ -44,6 +75,7 @@ public class DBService {
     /**
      * Returns number of ocurrences of an entry with a given name attribute value
      * we receive fewer elements than we asked for.
+     *
      * @param entryName name of the entry
      * @return number of ocurrences with a given name
      */
@@ -53,24 +85,27 @@ public class DBService {
 
     /**
      * adds new entry in DB
-     * @param DBEntityDTO DTO with the attributes (entryName and entryContent) for the new db entry
+     *
+     * @param foodData DTO with the attributes (entryName and entryContent) for the new db entry
      */
-    public void addEntry(DBEntityDTO DBEntityDTO) {
-        virtualDatabase.addEntity(DBEntityDTO);
+    public void addEntry(FoodData foodData) {
+        virtualDatabase.addEntity(foodData);
     }
 
     /**
      * Finds and copies (avoid exposing original) entry with given id.
      * Relies on binary search.
+     *
      * @param id entry id
      * @return copy of the entry with desired id
      */
-    public DBEntity showEntryById(int id) {
+    public Food showEntryById(int id) {
         return virtualDatabase.getEntityCopyById(id);
     }
 
     /**
      * Finds an entry by id and deletes it (if it exists)
+     *
      * @param id id of the deleted entry
      * @return true if entry found, false if not
      */
@@ -80,12 +115,13 @@ public class DBService {
 
     /**
      * Finds an entry by id and changes its attributes to provided values (if found)
-     * @param id id of udpated entry
-     * @param DBEntityDTO new entity contents
+     *
+     * @param id       id of udpated entry
+     * @param foodData new entity contents
      * @return true if entry found, false if not
      */
-    public boolean updateEntry(int id, DBEntityDTO DBEntityDTO) {
-        return virtualDatabase.updateEntityById(id, DBEntityDTO);
+    public boolean updateEntry(int id, FoodData foodData) {
+        return virtualDatabase.updateEntityById(id, foodData);
     }
 
     /**
@@ -94,11 +130,12 @@ public class DBService {
      * the copying still happens for the valid part of the index range.
      * - This means that when we input start or end out of bounds,
      * we receive fewer elements than we asked for.
+     *
      * @param startIndex index where to start the copy, inclusive
-     * @param copySize requested length of the copy
+     * @param copySize   requested length of the copy
      * @return partial copy of the table given by the range
      */
-    public ArrayList<DBEntity> showEntriesByIndexRange(int startIndex, int copySize) {
+    public ArrayList<Food> showEntriesByIndexRange(int startIndex, int copySize) {
         return virtualDatabase.getTableSubcopy(startIndex, copySize);
     }
 
@@ -107,12 +144,13 @@ public class DBService {
      * If the index range reaches out of arraylist indices,
      * the copying still happens for the valid part of the index range.
      * - This means that when we input start or end out of bounds,
-     * @param entryName name to search by
+     *
+     * @param entryName  name to search by
      * @param startIndex index where to start the copy, inclusive
-     * @param copySize requested length of the copy
+     * @param copySize   requested length of the copy
      * @return list of found entries
      */
-    public ArrayList<DBEntity> showEntriesByName(String entryName, int startIndex, int copySize) {
+    public ArrayList<Food> showEntriesByName(String entryName, int startIndex, int copySize) {
         return virtualDatabase.getTableSubcopy(entryName, startIndex, copySize);
     }
 

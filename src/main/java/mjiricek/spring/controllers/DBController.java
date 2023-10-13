@@ -1,8 +1,8 @@
 package mjiricek.spring.controllers;
 
-import mjiricek.spring.models.DBEntity;
+import mjiricek.spring.models.entities.Food;
 import mjiricek.spring.models.DBService;
-import mjiricek.spring.models.DBEntityDTO;
+import mjiricek.spring.models.entities.FoodData;
 
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 /**
  * Controller class for handling GET, POST, PUT and DELETE http requests
  * TODO user input validation
+ * - performs validation of the URL parameters (after TODO is done)
  */
 @Controller
 public class DBController {
@@ -86,7 +87,7 @@ public class DBController {
 
     /**
      * Browse card contains paging
-     * mutates Model and DBEntityDTO arguments
+     * ! mutates Model and foodDTO arguments
      * fill in the data for the browse card (table view)
      *
      * @param pageContent
@@ -94,11 +95,11 @@ public class DBController {
      * @param totalPages
      * @param model
      */
-    private void setTemplateAttributes(ArrayList<DBEntity> pageContent,
+    private void setTemplateAttributes(ArrayList<Food> pageContent,
                                        int pageIndex,
                                        int totalPages,
                                        Model model,
-                                       DBEntityDTO dBEntityDTO,
+                                       FoodData dBEntityDTO,
                                        String selectedID) {
         // set Browsing Card Attributes (fill in the data for the browsing card)
         // attribute names correspond to the variables used in thymeleaf templates
@@ -107,13 +108,20 @@ public class DBController {
         model.addAttribute("numberOfViews", totalPages);
         // set Detail Card Attributes (fill in the data for the detail card)
         // DTO is also used in the template (for getting data from and to the client)
-        if (selectedID != null && !selectedID.equals("null") && !selectedID.equals("")) {
-            DBEntity dbEntityCopy = dbService.showEntryById(Integer.parseInt(selectedID));
-            if (dbEntityCopy != null) {
-                model.addAttribute("displayDetail", true);
-                model.addAttribute("selectedID", selectedID);
-                dBEntityDTO.setAllAttributes(dbEntityCopy);
+        if (selectedID != null /*&& !selectedID.equals("null") && !selectedID.equals("")*/) {
+            model.addAttribute("displayDetail", true);
+
+            try {
+                Food foodCopy = dbService.showEntryById(Integer.parseInt(selectedID));
+                if (foodCopy != null) {
+
+                    model.addAttribute("selectedID", selectedID);
+                    dBEntityDTO.setAllAttributes(foodCopy);
+                }
+            } catch (IllegalArgumentException e) {
+                model.addAttribute("selectedID", "Illegal URL argument value");
             }
+
         }
     }
 
@@ -127,7 +135,7 @@ public class DBController {
     @GetMapping("/")
     public String renderIndexPage(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
                                   @RequestParam(value = "id", required = false) String selectedID,
-                                  @ModelAttribute("dBEntityDTO") DBEntityDTO dBEntityDTO,
+                                  @ModelAttribute("foodDTO") FoodData dBEntityDTO,
                                   Model model) {
         int pageIndex = Integer.parseInt(viewIndex); // TODO handle exception
         rwLock.readLock().lock(); // start of synchronized code block (read)
@@ -135,7 +143,7 @@ public class DBController {
             // handle paging
             int numberOfPages = computeNumberOfPages(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
             pageIndex = adjustIndexOutOfBounds(pageIndex, numberOfPages); // handle index out of bounds
-            ArrayList<DBEntity> shownEntries = dbService.showEntriesByIndexRange(pageIndex * pageLength, pageLength);
+            ArrayList<Food> shownEntries = dbService.showEntriesByIndexRange(pageIndex * pageLength, pageLength);
             // set variables accessed by the template
             setTemplateAttributes(shownEntries, pageIndex, numberOfPages, model, dBEntityDTO, selectedID);
         } finally {
@@ -155,11 +163,11 @@ public class DBController {
     public String renderSearchPage(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
                                    @RequestParam(value = "id", required = false) String selectedID,
                                    @RequestParam(value = "searchedName", required = false) String searchedName,
-                                   @ModelAttribute("dBEntityDTO") DBEntityDTO dBEntityDTO,
+                                   @ModelAttribute("foodDTO") FoodData dBEntityDTO,
                                    Model model) {
         int pageIndex = Integer.parseInt(viewIndex); // TODO handle exception
         int numberOfPages;
-        ArrayList<DBEntity> shownEntries;
+        ArrayList<Food> shownEntries;
 
         rwLock.readLock().lock(); // start of synchronized code block (read)
         try {
@@ -191,14 +199,14 @@ public class DBController {
      */
     @GetMapping("/create")
     public String renderCreatePage(@RequestParam(value = "id", required = false) String selectedID,
-                                   @ModelAttribute("dBEntityDTO") DBEntityDTO dBEntityDTO,
+                                   @ModelAttribute("foodDTO") FoodData dBEntityDTO,
                                    Model model) {
         rwLock.readLock().lock(); // start of synchronized code block (read)
         try {
             // handling paging
             int numberOfPages = computeNumberOfPages(dbService.getDBSize()); // find how many view cards we have depending on the VIEW_LENGTH and dBSize
             int pageIndex = numberOfPages - 1; // in create page, jump to the last entries in view
-            ArrayList<DBEntity> shownEntries = dbService.showEntriesByIndexRange(pageIndex * pageLength, pageLength);
+            ArrayList<Food> shownEntries = dbService.showEntriesByIndexRange(pageIndex * pageLength, pageLength);
             // filling in variables for the template
             model.addAttribute("displayDetail", true); // always display detail card for creating a new entry
             setTemplateAttributes(shownEntries, pageIndex, numberOfPages, model, dBEntityDTO, selectedID);
@@ -214,14 +222,14 @@ public class DBController {
      *
      * @param viewIndex
      * @param selectedID
-     * @param dbEntityDTO
+     * @param foodData
      * @param model
      * @return
      */
     @DeleteMapping("/")
     public String deleteAtIndexPage(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
                                     @RequestParam(value = "id", required = false) String selectedID,
-                                    @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
+                                    @ModelAttribute("foodDTO") FoodData foodData,
                                     Model model) {
         rwLock.writeLock().lock(); // start of synchronized code block (write)
         try {
@@ -230,7 +238,7 @@ public class DBController {
             rwLock.writeLock().unlock(); // end of synchronized code block (write)
         }
 
-        return renderIndexPage(viewIndex, selectedID, dbEntityDTO, model);
+        return renderIndexPage(viewIndex, selectedID, foodData, model);
     }
 
     /**
@@ -238,7 +246,7 @@ public class DBController {
      *
      * @param viewIndex
      * @param selectedID
-     * @param dbEntityDTO
+     * @param foodData
      * @param model
      * @return
      */
@@ -246,7 +254,7 @@ public class DBController {
     public String deleteAtSearchPage(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
                                      @RequestParam(value = "id", required = false) String selectedID,
                                      @RequestParam(value = "searchedName", required = false) String searchedName,
-                                     @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
+                                     @ModelAttribute("foodDTO") FoodData foodData,
                                      Model model) {
         rwLock.writeLock().lock(); // start of synchronized code block (write)
         try {
@@ -255,7 +263,7 @@ public class DBController {
             rwLock.writeLock().unlock(); // end of synchronized code block (write)
         }
 
-        return renderSearchPage(viewIndex, selectedID, searchedName, dbEntityDTO, model);
+        return renderSearchPage(viewIndex, selectedID, searchedName, foodData, model);
     }
 
     /**
@@ -263,23 +271,23 @@ public class DBController {
      *
      * @param viewIndex
      * @param selectedID
-     * @param dbEntityDTO
+     * @param foodData
      * @param model
      * @return
      */
     @PutMapping("/")
     public String updateAtIndex(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
                                 @RequestParam(value = "id", required = false) String selectedID,
-                                @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
+                                @ModelAttribute("foodDTO") FoodData foodData,
                                 Model model) {
         rwLock.writeLock().lock(); // start of synchronized code block (write)
         try {
-            dbService.updateEntry(Integer.parseInt(selectedID), dbEntityDTO);
+            dbService.updateEntry(Integer.parseInt(selectedID), foodData);
         } finally {
             rwLock.writeLock().unlock(); // end of synchronized code block (write)
         }
 
-        return renderIndexPage(viewIndex, selectedID, dbEntityDTO, model);
+        return renderIndexPage(viewIndex, selectedID, foodData, model);
     }
 
     /**
@@ -287,7 +295,7 @@ public class DBController {
      * @param viewIndex
      * @param selectedID
      * @param searchedName
-     * @param dbEntityDTO
+     * @param foodData
      * @param model
      * @return
      */
@@ -295,40 +303,40 @@ public class DBController {
     public String updateAtSearch(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
                                  @RequestParam(value = "id", required = false) String selectedID,
                                  @RequestParam(value = "searchedName", required = false) String searchedName,
-                                 @ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
+                                 @ModelAttribute("foodDTO") FoodData foodData,
                                  Model model) {
         rwLock.writeLock().lock(); // start of synchronized code block (write)
         try {
-            dbService.updateEntry(Integer.parseInt(selectedID), dbEntityDTO);
+            dbService.updateEntry(Integer.parseInt(selectedID), foodData);
         } finally {
             rwLock.writeLock().unlock(); // end of synchronized code block (write)
         }
 
-        return renderSearchPage(viewIndex, selectedID, searchedName, dbEntityDTO, model);
+        return renderSearchPage(viewIndex, selectedID, searchedName, foodData, model);
     }
 
     /**
      * Creates new entity in the "database"
      *
-     * @param dbEntityDTO
+     * @param foodData
      * @param model
      * @return
      */
     @PostMapping("/create")
-    public String createEntry(@ModelAttribute("dBEntityDTO") DBEntityDTO dbEntityDTO,
+    public String createEntry(@ModelAttribute("foodDTO") FoodData foodData,
                               Model model) {
         rwLock.writeLock().lock(); // start of synchronized code block (write)
         try {
-            dbService.addEntry(dbEntityDTO);
+            dbService.addEntry(foodData);
         } finally {
             rwLock.writeLock().unlock(); // end of synchronized code block (write)
         }
         // next, we need to clean the DTO after the new entry has been saved
         // otherwise, the data will stay in the form
-        dbEntityDTO.setAllAttributes(new DBEntityDTO());
+        foodData.setAllAttributes(new FoodData());
 
         // no detail of item should be displayed
-        return renderCreatePage(null, dbEntityDTO, model);
+        return renderCreatePage(null, foodData, model);
     }
 
 }
