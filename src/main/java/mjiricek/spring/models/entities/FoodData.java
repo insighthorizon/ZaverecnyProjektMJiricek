@@ -4,7 +4,7 @@ package mjiricek.spring.models.entities;
  * Defines the "part" of the data in DBEntity (DBEntity extends EntityDTO) which is fully accessible to the client
  * - that this the "table row" without id
  * - modifiable by the client
- * (user may see the id#, but can't change it, nor choose id when creating new entity)
+ * (user may see the id# in some cases, but can't change it, nor choose id when creating new entity)
  */
 public class FoodData {
 
@@ -40,12 +40,11 @@ public class FoodData {
 
     /**
      * full constructor
-     *
-     * @param foodName
-     * @param kcalContent
-     * @param proteinContent
-     * @param carbContent
-     * @param fatContent
+     * @param foodName name of the food
+     * @param kcalContent kilocalories per 100 g of the food
+     * @param proteinContent grams of protein per 100 g of the food
+     * @param carbContent grams of carbohydrates per 100 g of the food
+     * @param fatContent grams of fat per 100 g of the food
      */
     public FoodData(String foodName, double kcalContent, double proteinContent, double carbContent, double fatContent) {
         setFoodName(foodName);
@@ -57,8 +56,7 @@ public class FoodData {
 
     /**
      * copy constructor
-     *
-     * @param foodData entity being copied
+     * @param foodData foodData being copied
      */
     public FoodData(FoodData foodData) {
         this(foodData.getFoodName(),
@@ -69,58 +67,96 @@ public class FoodData {
     }
 
     /**
-     * copy method
+     * copy method - returns new copy of the same FoodData
      */
     public FoodData copy() {
         return new FoodData(this);
     }
 
 
+    /**
+     * return name of the food
+     * @return name of the food
+     */
     public String getFoodName() {
         return foodName;
     }
 
+    /**
+     * set name of the food
+     * @param foodName name of the food
+     */
     public void setFoodName(String foodName) {
         this.foodName = foodName;
     }
 
+    /**
+     * return kcal content of the food
+     * @return kcal content of the food
+     */
     public double getKcalContent() {
         return kcalContent;
     }
 
+    /**
+     * set kcal content of the food
+     * @param kcalContent kcal content of the food
+     */
     public void setKcalContent(double kcalContent) {
         this.kcalContent = kcalContent;
     }
 
+    /**
+     * return protein content of the food
+     * @return protein content of the food
+     */
     public double getProteinContent() {
         return proteinContent;
     }
 
+    /**
+     * set protein content of the food
+     * @param proteinContent protein content of the food
+     */
     public void setProteinContent(double proteinContent) {
         this.proteinContent = proteinContent;
     }
 
+    /**
+     * return carbohydrate content of the food
+     * @return carbohydrate content of the food
+     */
     public double getCarbContent() {
         return carbContent;
     }
 
+    /**
+     * set carbohydrate content of the food
+     * @param carbContent carbohydrate content of the food
+     */
     public void setCarbContent(double carbContent) {
         this.carbContent = carbContent;
     }
 
+    /**
+     * return fat content of the food
+     * @return fat content of the food
+     */
     public double getFatContent() {
         return fatContent;
     }
 
+    /**
+     * set fat content of the food
+     * @param fatContent fat content of the food
+     */
     public void setFatContent(double fatContent) {
         this.fatContent = fatContent;
     }
 
-
     /**
-     * set's all DTO attributes by passing just one EntityDTO parameter
-     *
-     * @param foodData entity containing the new parameters
+     * set's all attributes by passing just one FoodData parameter
+     * @param foodData FoodData containing the new parameters
      */
     public void setAllAttributes(FoodData foodData) {
         setFoodName(foodData.getFoodName());

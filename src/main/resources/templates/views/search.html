@@ -1,4 +1,5 @@
 <!-- this template uses fragments, see fragments.html -->
+<!-- see fragments/fragments.html -->
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
 
@@ -6,7 +7,8 @@
 <head th:replace="~{fragments/fragments.html :: docHead}"></head>
 
 <!-- assignment of some variables in <body> scope in order to fill in fragments variables
-      - those variables are specific to each template: index.html, search.html, create.html ...-->
+      - those variables are specific to each template: index.html, search.html, create.html ...
+      - this allows us to specify some fragment variables without doing that in controller -->
 <body th:with="
 searchLinkClass='current-page',
 formMethod='PUT',

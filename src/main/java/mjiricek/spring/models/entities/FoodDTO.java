@@ -16,14 +16,17 @@ public class FoodDTO {
      * kiloCalories per 100 grams of the food
      */
     private String kcalContent;
+
     /**
      * grams of protein per 100 grams of the food
      */
     private String proteinContent;
+
     /**
      * grams of carbohydrates per 100 grams of the food
      */
     private String carbContent;
+
     /**
      * grams of fat per 100 grams of the food
      */
@@ -31,6 +34,11 @@ public class FoodDTO {
 
     /**
      * constructor
+     * @param name of the food
+     * @param kcal kilocalories per 100 grams of the food
+     * @param protein grams of protein per 100 grams of the food
+     * @param carb grams of carbohydrates per 100 grams of the food
+     * @param fat grams of fat per 100 grams of the food
      */
     public FoodDTO(String name, String kcal, String protein, String carb, String fat) {
         setFoodName(name);
@@ -49,6 +57,7 @@ public class FoodDTO {
 
     /**
      * set all attributes based on Food entity
+     * @param food food/entity
      */
     public void setAllAttributes(Food food) {
         setFoodName(food.getFoodName());
@@ -69,42 +78,82 @@ public class FoodDTO {
         setFatContent("0");
     }
 
+    /**
+     * get name of the food
+     * @return name of the food
+     */
     public String getFoodName() {
         return foodName;
     }
 
+    /**
+     * set name of the food
+     * @param foodName name of the food
+     */
     public void setFoodName(String foodName) {
         this.foodName = foodName;
     }
 
+    /**
+     * get kcal content of the food
+     * @return kcal content of the food
+     */
     public String getKcalContent() {
         return kcalContent;
     }
 
+    /**
+     * set kcal content of the food
+     * @param kcalContent kcal content of the food
+     */
     public void setKcalContent(String kcalContent) {
         this.kcalContent = kcalContent;
     }
 
+    /**
+     * get protein content of the food
+     * @return protein content of the food
+     */
     public String getProteinContent() {
         return proteinContent;
     }
 
+    /**
+     * set protein content of the food
+     * @param proteinContent protein content of the food
+     */
     public void setProteinContent(String proteinContent) {
         this.proteinContent = proteinContent;
     }
 
+    /**
+     * get carbohydrate content of the food
+     * @return carbohydrate content of the food
+     */
     public String getCarbContent() {
         return carbContent;
     }
 
+    /**
+     * set carbohydrate content of the food
+     * @param carbContent crabohydrate content of the food
+     */
     public void setCarbContent(String carbContent) {
         this.carbContent = carbContent;
     }
 
+    /**
+     * get fat content of the food
+     * @return fat content of the food
+     */
     public String getFatContent() {
         return fatContent;
     }
 
+    /**
+     * set fat content of the food
+     * @param fatContent fat content of the food
+     */
     public void setFatContent(String fatContent) {
         this.fatContent = fatContent;
     }

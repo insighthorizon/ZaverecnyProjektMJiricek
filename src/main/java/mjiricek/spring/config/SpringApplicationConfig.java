@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
  * - Each method returns an instance of an object or a primitive constant
  * to be injected
  */
-
 @Configuration
 public class SpringApplicationConfig {
     /**
@@ -31,8 +30,20 @@ public class SpringApplicationConfig {
         dbSimulator.addEntity(new FoodData("white roll", 310, 9.78, 57.47, 3.68));
         dbSimulator.addEntity(new FoodData("bread", 244, 8, 45, 1.1));
         dbSimulator.addEntity(new FoodData("chicken egg", 151, 12.38, 0.94, 10.87));
-        // TODO add more foods
+        dbSimulator.addEntity(new FoodData("salmon", 196, 22, 0, 12));
+        dbSimulator.addEntity(new FoodData("broccoli", 43, 3.3, 7.7, 0.2));
+        dbSimulator.addEntity(new FoodData("apple", 63, 0.37, 12.95, 0.4));
+        dbSimulator.addEntity(new FoodData("rice", 346, 8, 78, 0.3));
+        dbSimulator.addEntity(new FoodData("cucumber", 16, 0.82, 2.28, 0.18));
+        dbSimulator.addEntity(new FoodData("lemon", 36, 0.66, 6, 0.53));
+        dbSimulator.addEntity(new FoodData("beer", 42, 0.3, 2, 0)); // note 1g of alcohol = 7 kcal
+        dbSimulator.addEntity(new FoodData("cola", 45, 0, 11.2, 0));
+        dbSimulator.addEntity(new FoodData("tuna", 101, 23, 0.1, 1));
+        dbSimulator.addEntity(new FoodData("sardines", 176, 29, 0, 8.8));
+        dbSimulator.addEntity(new FoodData("pizza", 275, 8.97, 37.7, 9.55));
+        dbSimulator.addEntity(new FoodData("cheese 30%", 263, 30.3, 1.4, 15.2));
 
+        // extra garbage data
         for (char i = 'A'; i <= 'z'; i++) {
             dbSimulator.addEntity(new FoodData((String.valueOf(i) + i + i + i + i + i), i, i, i, i));
         }
@@ -41,7 +52,7 @@ public class SpringApplicationConfig {
     }
 
     /**
-     * - for the DBController constructor
+     * Bean for the DBController constructor
      * @return integer constant to be injected in controller
      * as pageLength
      */

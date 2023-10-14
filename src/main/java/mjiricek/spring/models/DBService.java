@@ -16,7 +16,6 @@ import java.util.ArrayList;
  * parsing and parsing exceptions are in the competency of a controller class)
  * - This class should have no internal state on its own, except the reference to virtualDatabase
  * which should be immutable. So this class is supposed to be thread safe by default
- * TODO add input validation (ban negative mass, and so on)
  * Empty string names are allowed for testing purposses (it's quicker to not fill anything)
  *
  */
@@ -40,9 +39,8 @@ public class DBService {
     /**
      * transform DTO into FoodData
      * - performs parsing and logical input validation (no negative weights)
-     *
-     * @param foodDTO
-     * @return
+     * @param foodDTO FoodDTO being transformed into FoodData
+     * @return FoodData parsed from validated FoodDTO
      */
     public FoodData dTOToFood(FoodDTO foodDTO) throws IllegalArgumentException {
         // parsing
@@ -67,7 +65,6 @@ public class DBService {
 
     /**
      * returns number of entries in the database
-     *
      * @return number of entries in DB
      */
     public int getDBSize() {
@@ -77,7 +74,6 @@ public class DBService {
     /**
      * Returns number of ocurrences of an entry with a given name attribute value
      * we receive fewer elements than we asked for.
-     *
      * @param entryName name of the entry
      * @return number of ocurrences with a given name
      */
@@ -87,7 +83,6 @@ public class DBService {
 
     /**
      * adds new entry in DB
-     *
      * @param foodDTO DTO with the attributes (entryName and entryContent) for the new db entry
      */
     public void addEntry(FoodDTO foodDTO) throws IllegalArgumentException {
@@ -98,7 +93,6 @@ public class DBService {
     /**
      * Finds and copies (avoid exposing original) entry with given id.
      * Relies on binary search.
-     *
      * @param id entry id
      * @return copy of the entry with desired id
      */
@@ -111,7 +105,6 @@ public class DBService {
 
     /**
      * Finds an entry by id and deletes it (if it exists)
-     *
      * @param id id of the deleted entry
      * @return true if entry found, false if not
      */
@@ -124,7 +117,6 @@ public class DBService {
 
     /**
      * Finds an entry by id and changes its attributes to provided values (if found)
-     *
      * @param id id of udpated entry
      * @param foodDTO new entity contents
      * @return true if entry found, false if not
@@ -144,7 +136,6 @@ public class DBService {
      * the copying still happens for the valid part of the index range.
      * - This means that when we input start or end out of bounds,
      * we receive fewer elements than we asked for.
-     *
      * @param startIndex index where to start the copy, inclusive
      * @param copySize   requested length of the copy
      * @return partial copy of the table given by the range
@@ -154,6 +145,7 @@ public class DBService {
             startIndex = 0;
         if (copySize <= 0)
             copySize = 1;
+
         return virtualDatabase.getTableSubcopy(startIndex, copySize);
     }
 
@@ -162,7 +154,6 @@ public class DBService {
      * If the index range reaches out of arraylist indices,
      * the copying still happens for the valid part of the index range.
      * - This means that when we input start or end out of bounds,
-     *
      * @param entryName  name to search by
      * @param startIndex index where to start the copy, inclusive
      * @param copySize   requested length of the copy
@@ -173,6 +164,7 @@ public class DBService {
             startIndex = 0;
         if (copySize <= 0)
             copySize = 1;
+
         return virtualDatabase.getTableSubcopy(entryName, startIndex, copySize);
     }
 

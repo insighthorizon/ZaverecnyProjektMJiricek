@@ -1,0 +1,17 @@
+<!-- default error page-->
+<!-- displays error trace - prototype application, not ready for production -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Internal server error</title>
+</head>
+<body>
+<h2 th:text="'Internal server error at ' + ${path}"></h2>
+
+<a href="/">Return home</a>
+
+<pre th:text="${trace}"></pre>
+
+</body>
+</html>

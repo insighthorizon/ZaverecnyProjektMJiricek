@@ -14,20 +14,20 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Controller class for handling GET, POST, PUT and DELETE http requests
- * TODO user input validation
- * - performs validation of the URL parameters (after TODO is done)
+ * Controller for handling GET, POST, PUT and DELETE http requests on the nutritional database
+ * Paging is based on offset/limit
+ * TODO later implement cursor based paging (based on id, not index offset)
  */
 @Controller
 public class DBController {
     /**
-     * service used by the controller
-     * - we want all fields to be immutable, so dbService instance is passed by constructor
+     * database service used by the controller
+     * - we want all fields to be immutable, so dbService instance is passed by constructor (dependency injection)
      */
     private final DBService dbService;
 
     /**
-     * number of entries displayed in one page in browse card (one page in paging)
+     * constant for number of entries displayed in one page in browse card (one page in paging)
      */
     private final int pageLength; // can't be less than 1
 
@@ -45,9 +45,8 @@ public class DBController {
 
     /**
      * constructor (Spring uses it in dependency injection)
-     *
-     * @param pageLength
-     * @param dbService
+     * @param pageLength initialization value for controllers pageLength
+     * @param dbService reference to dbService that will be used by the controller
      */
     public DBController(@Qualifier("getPageLength") int pageLength,
                         @Autowired DBService dbService) {
@@ -56,9 +55,8 @@ public class DBController {
     }
 
     /**
-     * Helper method to
-     *
-     * @param index      paging index
+     * Helper method to address index out of bounds in paging
+     * @param index paging index
      * @param upperBound upper bound exclusive
      * @return new paging index value
      */
@@ -73,8 +71,8 @@ public class DBController {
     }
 
     /**
-     * Helper method to compute how many views will be in browse card
-     *
+     * Helper method to compute how many views will be in browsing card
+     * (for pagination)
      * @param numberOfEntitiesToBrowse number of entities that can be browsed through
      * @return number of views
      */
@@ -86,35 +84,36 @@ public class DBController {
     }
 
     /**
-     * Browse card contains paging
+     * Set template attributes (in Model) and DTO, that is fill in the data for the browse card (table view)
+     * - for display of the data and paging
      * ! mutates Model and foodDTO arguments
-     * fill in the data for the browse card (table view)
-     *
-     * @param pageContent
-     * @param pageIndex
-     * @param totalPages
-     * @param model
+     * @param pageContent entities (foods) to be displayed
+     * @param pageIndex index of currently displayed page
+     * @param totalPages total number of pages that could be displayed
+     * @param model contains variables (attributes) that are displayed by the templates
+     * @param foodDTO food/entity data - both as intput/output
+     * @param selectedID id of entity/food currently selected by the clieny
      */
     private void setTemplateAttributes(ArrayList<Food> pageContent,
                                        int pageIndex,
                                        int totalPages,
                                        Model model,
-                                       FoodDTO dBEntityDTO,
+                                       FoodDTO foodDTO,
                                        Integer selectedID) {
         // set Browsing Card attributes (fill in the templane variables for the browsing card)
         model.addAttribute("entries", pageContent);
         model.addAttribute("viewIndex", pageIndex);
         model.addAttribute("numberOfViews", totalPages);
 
-        // set Detail Card attributes (fill in the template variables for the detail card)
+        // set Detail/edit Card attributes (fill in the template variables for the detail card)
         // DTO is also used in the template (for getting data from and to the client)
         if (selectedID != null) {
-            Food foodCopy = dbService.showEntryById(selectedID);
-            if (foodCopy != null) {
+            Food foodCopy = dbService.showEntryById(selectedID); // get food from the db
+            if (foodCopy != null) { // attempt to display only if food found
                 model.addAttribute("displayDetail", true);
                 model.addAttribute("selectedID", selectedID);
-                dBEntityDTO.setAllAttributes(foodCopy);
-            } else {
+                foodDTO.setAllAttributes(foodCopy);
+            } else { // otherwise show status of "not found"
                 model.addAttribute("operationStatus", "Entity with id "
                         + selectedID + " wasn't found");
             }
@@ -123,17 +122,16 @@ public class DBController {
     }
 
     /**
-     * make sure that URL parameters contain numbers
-     * mutates model in the case that validation fails
-     *
-     * @param pageIndex
-     * @param selectedID
-     * @param model
-     * @return
+     * Validation make sure that URL parameters contain numbers
+     * mutates model in the case that validation fails - to result in display of error in view
+     * @param pageIndex index of current page between parsing and validation
+     * @param selectedID food/entity id selected by the client before parsing and validation
+     * @param model contains variables displayed by the templates
+     * @return array of validated Integer parameters
      */
     private Integer[] validateURLParameters(String pageIndex, String selectedID, Model model) {
         Integer[] validatedURLParameters = new Integer[2];
-
+        // there is a try-catch block for each parsed parameter - each may have different conditions
         try {
             try {
                 validatedURLParameters[0] = Integer.parseInt(pageIndex);
@@ -154,6 +152,7 @@ public class DBController {
                 throw new IllegalArgumentException();
             }
         } catch (IllegalArgumentException e) {
+            // in any case, we let client know about the error by setting this model attribute
             model.addAttribute("uRLParameterError", "Illegal URL argument value");
         }
 
@@ -162,16 +161,18 @@ public class DBController {
 
     /**
      * Handler of the GET request on the URL "/" (with url arguments)
+     * - page for browsing foods/entities and editing/deleting them
      * (index page is browse page)
-     *
      * @param pageIndex value of url parameter indicating which page in browsing card is displayed (paging)
-     * @param model     Model parameter for data to be presented to the client
+     * @param selectedID food/entity id selected by the user
+     * @param foodDTO DTO used for transfring entity/food data between client-application (input/output)
+     * @param model Model parameter for data to be presented to the client in the template
      * @return name of the html template being presented to the client
      */
     @GetMapping("/")
     public String renderIndexPage(@RequestParam(value = "view", defaultValue = "0") String pageIndex,
                                   @RequestParam(value = "id", required = false) String selectedID,
-                                  @ModelAttribute("foodDTO") FoodDTO dBEntityDTO,
+                                  @ModelAttribute("foodDTO") FoodDTO foodDTO,
                                   Model model) {
         // validate that parameters are valid numbers
         // first element is pageIndex, second is selectedID
@@ -184,25 +185,29 @@ public class DBController {
             validatedURLParameters[0] = adjustIndexOutOfBounds(validatedURLParameters[0], numberOfPages); // handle index out of bounds
             ArrayList<Food> shownEntries = dbService.showEntriesByIndexRange(validatedURLParameters[0] * pageLength, pageLength);
             // set variables accessed by the template
-            setTemplateAttributes(shownEntries, validatedURLParameters[0], numberOfPages, model, dBEntityDTO, validatedURLParameters[1]);
+            setTemplateAttributes(shownEntries, validatedURLParameters[0], numberOfPages, model, foodDTO, validatedURLParameters[1]);
         } finally {
             rwLock.readLock().unlock(); // end of synchronized code block (read)
         }
+
         return "views/index";
     }
 
     /**
-     * Handler of the GET request on the URL "/" (with url arguments)
-     *
-     * @param pageIndex value of url parameter reresenting in which view is being card displayed (paging)
-     * @param model     Model parameter for data to be presented to the client
+     * Handler of the GET request on the URL "/search" (with url arguments)
+     * - search page - for searching foods/entities by name and editing/deleting them
+     * @param pageIndex value of url parameter indicating which page in browsing card is displayed (paging)
+     * @param selectedID food/entity id selected by the user
+     * @param searchedName food/entity name searched by the user
+     * @param foodDTO DTO used for transfring entity/food data between client-application (input/output)
+     * @param model Model parameter for data to be presented to the client in the template
      * @return name of the html template being presented to the client
      */
     @GetMapping("/search")
     public String renderSearchPage(@RequestParam(value = "view", defaultValue = "0") String pageIndex,
                                    @RequestParam(value = "id", required = false) String selectedID,
                                    @RequestParam(value = "searchedName", required = false) String searchedName,
-                                   @ModelAttribute("foodDTO") FoodDTO dBEntityDTO,
+                                   @ModelAttribute("foodDTO") FoodDTO foodDTO,
                                    Model model) {
         // validate that parameters are valid numbers
         // first element is pageIndex, second is selectedID
@@ -224,8 +229,8 @@ public class DBController {
                 shownEntries = dbService.showEntriesByName(searchedName, validatedURLParameters[0] * pageLength, pageLength);
                 model.addAttribute("searchedName", searchedName); // extra template attribute
             }
-
-            setTemplateAttributes(shownEntries, validatedURLParameters[0], numberOfPages, model, dBEntityDTO, validatedURLParameters[1]);
+            // set variables accessed by the template
+            setTemplateAttributes(shownEntries, validatedURLParameters[0], numberOfPages, model, foodDTO, validatedURLParameters[1]);
         } finally {
             rwLock.readLock().unlock(); // end of synchronized code block (read)
         }
@@ -233,14 +238,16 @@ public class DBController {
     }
 
     /**
-     * Handler of the GET request on the URL "/" (with url arguments)
-     *
-     * @param model Model parameter for data to be presented to the client
+     * Handler of the GET request on the URL "/create" (with url arguments)
+     * - create page - for creatinng new foods/entities (adding them to database)
+     * @param selectedID food/entity id selected by the user
+     * @param foodDTO DTO used for transfring entity/food data between client-application (input/output)
+     * @param model Model parameter for data to be presented to the client in the template
      * @return name of the html template being presented to the client
      */
     @GetMapping("/create")
     public String renderCreatePage(@RequestParam(value = "id", required = false) String selectedID,
-                                   @ModelAttribute("foodDTO") FoodDTO dBEntityDTO,
+                                   @ModelAttribute("foodDTO") FoodDTO foodDTO,
                                    Model model) {
         // validate that parameters are valid numbers
         // first element is pageIndex, second is selectedID
@@ -254,7 +261,7 @@ public class DBController {
             ArrayList<Food> shownEntries = dbService.showEntriesByIndexRange(pageIndex * pageLength, pageLength);
             // filling in variables for the template
             model.addAttribute("displayDetail", true); // always display detail card for creating a new entry
-            setTemplateAttributes(shownEntries, pageIndex, numberOfPages, model, dBEntityDTO, validatedURLParameters[1]);
+            setTemplateAttributes(shownEntries, pageIndex, numberOfPages, model, foodDTO, validatedURLParameters[1]);
         } finally {
             rwLock.readLock().unlock(); // end of synchronized code block (read)
         }
@@ -265,9 +272,8 @@ public class DBController {
     /**
      * Attempts to delete entry from the database
      * - performs mutation of model
-     *
-     * @param selectedID
-     * @param model
+     * @param selectedID food/entity id selected by the user
+     * @param model Model parameter for data to be presented to the client in the template
      */
     private void delete(String selectedID, Model model) {
         // validate that parameters are valid numbers
@@ -288,28 +294,31 @@ public class DBController {
     }
 
     /**
-     * @param pageIndex
-     * @param selectedID
-     * @param foodDTO
-     * @param model
-     * @return
+     * Handler of the DELETE request on the index page "/"
+     * @param pageIndex value of url parameter indicating which page in browsing card is displayed (paging)
+     * @param selectedID food/entity id selected by the user
+     * @param foodDTO DTO used for transfring entity/food data between client-application (input/output)
+     * @param model Model parameter for data to be presented to the client in the template
+     * @return name of html template
      */
     @DeleteMapping("/")
     public String deleteAtIndexPage(@RequestParam(value = "view", defaultValue = "0") String pageIndex,
                                     @RequestParam(value = "id", required = false) String selectedID,
                                     @ModelAttribute("foodDTO") FoodDTO foodDTO,
                                     Model model) {
-        delete(selectedID, model); // mutates model
+        delete(selectedID, model); // attempts to perform the db deletion and may mutate model
         // selectedID changes to null because it has been deleted (if it even existed before)
         return renderIndexPage(pageIndex, null, foodDTO, model);
     }
 
     /**
-     * @param pageIndex
-     * @param selectedID
-     * @param foodDTO
-     * @param model
-     * @return
+     * Handler of the DELETE request on the search page "/search"
+     * @param pageIndex value of url parameter indicating which page in browsing card is displayed (paging)
+     * @param selectedID food/entity id selected by the user
+     * @param searchedName food/entity name searched by the user
+     * @param foodDTO DTO used for transfring entity/food data between client-application (input/output)
+     * @param model Model parameter for data to be presented to the client in the template
+     * @return name of html template
      */
     @DeleteMapping("/search")
     public String deleteAtSearchPage(@RequestParam(value = "view", defaultValue = "0") String pageIndex,
@@ -317,18 +326,17 @@ public class DBController {
                                      @RequestParam(value = "searchedName", required = false) String searchedName,
                                      @ModelAttribute("foodDTO") FoodDTO foodDTO,
                                      Model model) {
-        delete(selectedID, model); // mutates model
+        delete(selectedID, model); // attempts to perform the db deletion and may mutate model
         // selectedID changes to null because it has been deleted (if it even existed)
         return renderSearchPage(pageIndex, null, searchedName, foodDTO, model);
     }
 
     /**
-     * attempts to update database entity
+     * Attempts to update database entity
      * - mutates model
-     *
-     * @param selectedID
-     * @param foodDTO
-     * @param model
+     * @param selectedID food/entity id selected by the user
+     * @param foodDTO DTO used for transfring entity/food data between client-application (input/output)
+     * @param model Model parameter for data to be presented to the client in the template
      */
     private void update(String selectedID, FoodDTO foodDTO, Model model) {
         // validate that parameters are valid numbers
@@ -352,49 +360,48 @@ public class DBController {
     }
 
     /**
-     * @param pageIndex
-     * @param selectedID
-     * @param foodDTO
-     * @param model
-     * @return
+     * Handler of the PUT request (update) on the index page "/"
+     * @param pageIndex value of url parameter indicating which page in browsing card is displayed (paging)
+     * @param selectedID food/entity id selected by the user
+     * @param foodDTO DTO used for transfring entity/food data between client-application (input/output)
+     * @param model Model parameter for data to be presented to the client in the template
+     * @return name of html template
      */
     @PutMapping("/")
     public String updateAtIndexPage(@RequestParam(value = "view", defaultValue = "0") String pageIndex,
                                     @RequestParam(value = "id", required = false) String selectedID,
                                     @ModelAttribute("foodDTO") FoodDTO foodDTO,
                                     Model model) {
-        update(selectedID, foodDTO, model);
+        update(selectedID, foodDTO, model); // attempts to perform the db update and may mutate model
 
         return renderIndexPage(pageIndex, selectedID, foodDTO, model);
     }
 
     /**
-     * TODO handle "entry not found" (indication whether update was succesful to the client)
-     *
-     * @param viewIndex
-     * @param selectedID
-     * @param searchedName
-     * @param foodDTO
-     * @param model
-     * @return
+     * Handler of the PUT request (update) on the search page "/search"
+     * @param pageIndex value of url parameter indicating which page in browsing card is displayed (paging)
+     * @param selectedID food/entity id selected by the user
+     * @param searchedName food/entity name searched by the user
+     * @param foodDTO DTO used for transfring entity/food data between client-application (input/output)
+     * @param model Model parameter for data to be presented to the client in the template
+     * @return name of html template
      */
     @PutMapping("/search")
-    public String updateAtSearchPage(@RequestParam(value = "view", defaultValue = "0") String viewIndex,
+    public String updateAtSearchPage(@RequestParam(value = "view", defaultValue = "0") String pageIndex,
                                      @RequestParam(value = "id", required = false) String selectedID,
                                      @RequestParam(value = "searchedName", required = false) String searchedName,
                                      @ModelAttribute("foodDTO") FoodDTO foodDTO,
                                      Model model) {
-        update(selectedID, foodDTO, model);
+        update(selectedID, foodDTO, model); // attempts to perform the db update and may mutate model
 
-        return renderSearchPage(viewIndex, selectedID, searchedName, foodDTO, model);
+        return renderSearchPage(pageIndex, selectedID, searchedName, foodDTO, model);
     }
 
     /**
-     * Creates new entity in the "database"
-     *
-     * @param foodDTO
-     * @param model
-     * @return
+     * Handler of the POST reuquest - creates new entity in the "database"
+     * @param foodDTO DTO used for transfring entity/food data between client-application (input/output)
+     * @param model Model parameter for data to be presented to the client in the template
+     * @return name of html template
      */
     @PostMapping("/create")
     public String createEntry(@ModelAttribute("foodDTO") FoodDTO foodDTO,

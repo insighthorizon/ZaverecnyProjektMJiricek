@@ -1,14 +1,22 @@
+/* all CSS styling of this application */
+/* vanilla CSS, no framework */
+/* i cared only about being able to see my results for testing purposes */
+/* i basically didn't care about design */
+
+/* CSS reset */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* variables */
 :root {
   --navbar-height: 8vh;
   --card-max-width: 500px;
 }
 
+/* header contains logo and navbar, so it is flex container */
 header {
   position: fixed;
   display: flex;
@@ -19,7 +27,8 @@ header {
   background-color: Wheat;
 }
 
-header>nav {
+/* navbar */
+header > nav {
   list-style-type: none;
   display: flex;
   gap: 10px;
@@ -58,6 +67,7 @@ main {
   min-height: 100vh;
 }
 
+/* card for browsing through the table */
 .table-card {
   list-style: none;
   background-color: Wheat;
@@ -65,17 +75,21 @@ main {
   margin: auto;
 }
 
+/* styling of one item/food/entity in the table */
+/* table is not displayed as html <table>, but as a list, using grid styling */
 .grid-item {
   display: grid;
   grid-template-columns: 3rem 8rem 6rem 6rem 6rem 6rem 4rem;
 }
 
+/* table header */
 .grid-header {
   background-color: DarkSlateGray;
   color: white;
   font-weight: bold;
 }
 
+/* PREVIOUS and NEXT buttons */
 #table-card-navigation {
   padding: 1vh 5vw 1vh 5vw;
   display: flex;
@@ -99,6 +113,7 @@ main {
   margin-top: 2px;
 }
 
+/* styling of the card for editting */
 .detail-card {
   background-color: Wheat;
   max-width: var(--card-max-width);
@@ -111,6 +126,7 @@ main {
   margin-bottom: 10px;
 }
 
+/* detail card has grid, so that it looks ike nice table*/
 .detail-card>form>label,
 .detail-card>form>span {
   display: grid;
@@ -122,6 +138,8 @@ main {
   font-size: 1rem;
 }
 
+/* detail card contains two forms (the second one is purely for tele action)
+but we want it to appear as just one form */
 .detail-card>form {
   display: inline;
 }
@@ -141,6 +159,8 @@ main {
   font-size: 1.2rem;
 }
 
+/* bottom of the page sometimes shows status of performed operation (show/delete/update)
+or error caused by users input or wrong url parameters */
 .error {
   color: Red;
   font-weight: bold;

@@ -1,5 +1,12 @@
 <!-- file with all the fragments (reusable code) used in this project's templates -->
-<!-- TODO add buttons next to id# and Name attributes in table header for ascending and descending sorting -->
+<!-- project has no javascript -->
+<!-- structure of the page relies on URL parameters which need to be validated and processed by controller -->
+<!-- input from the user is based completely on html forms -->
+<!-- all 4 html requests (get, post, put, delete) are based on html forms
+because html doesn't support PUT and DELETE requests, hidden input tags are used together with spring setting
+ spring.mvc.hiddenmethod.filter.enabled=true application.properties) -->
+<!-- TODO add buttons next to id# and Name attributes in table header for ascending and descending order -->
+
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
 
@@ -10,7 +17,7 @@
   <link th:href="@{/css/styles.css}" rel="stylesheet" type="text/css">
 </head>
 
-<!-- <header> containing "navbar" -->
+<!-- <header> containing logo and "navbar" -->
 <header th:fragment="navbar">
   <h3>Nutritional database</h3>
   <nav>
@@ -31,6 +38,7 @@
       <div>Carb/100g</div>
       <div>Fat/100g</div>
     </li>
+    <!-- cycle for rendering N elements of the list -->
     <li th:each="entry: ${entries}" class="grid-item"> <!-- general table row - definition of data fields shown to client -->
       <div th:text="${entry.foodID}"></div>
       <div th:text="${entry.foodName}"></div>
@@ -39,7 +47,7 @@
       <div th:text="${entry.carbContent}"></div>
       <div th:text="${entry.fatContent}"></div>
       <!-- button for opening the detail view of a given entry (table row): -->
-      <!-- uses multiple url arguments -->
+      <!-- uses multiple url parameters -->
       <a th:href="
       '?view=' + ${viewIndex} +
       '&id=' + ${entry.foodID} +
@@ -47,14 +55,14 @@
     </li>
   </ol>
   <ul id="table-card-navigation"> <!-- buttons for Browsing though the table -->
-    <!-- PREVIOUS button - has multiple URL arguments -->
+    <!-- PREVIOUS button - has multiple URL parameters -->
     <a th:unless="${createLinkClass}" th:href="
     '?view=' + ${viewIndex - 1} +
     '&id=' +${selectedID} +
     '&searchedName=' + ${searchedName}" class="previous-view clickable">PREVIOUS</a>
-    <!-- indicator of the position of the table view within the full table, for example "4/6" -->
+    <!-- pagination - indicator of the position of the table view within the full table, for example "4/6" -->
     <div th:text="${viewIndex + 1} + '/' + ${numberOfViews}" id="view-number"></div>
-    <!-- NEXT button - has multiple URL arguments -->
+    <!-- NEXT button - has multiple URL parameters -->
     <a th:unless="${createLinkClass}" th:href="
     '?view=' + ${viewIndex + 1} +
     '&id=' +${selectedID} +
@@ -66,12 +74,12 @@
 <section th:fragment="detailCard" th:if="${displayDetail}" class="detail-card">
   <p th:if="${createLinkClass}">NEW FOOD:</p>
   <!-- form used for either update or create action -->
-  <!-- uses multiple url arguments -->
+  <!-- uses multiple url parameters -->
   <form th:action="
   '?view=' + ${viewIndex} +
   '&id=' +${selectedID} +
   '&searchedName=' + ${searchedName}"
-        th:method="${formMethod}">
+  th:method="${formMethod}">
     <span th:unless="${createLinkClass}" th:text="'id# ' + ${selectedID}"></span>
     <!-- data fields -->
     <label>Name: <input th:field="${foodDTO.foodName}" type="text"/></label>
@@ -83,7 +91,7 @@
     <input type="reset" value="Reset" class="clickable">
     <input type="submit" th:value="${formButton}" class="clickable">
   </form>
-  <!-- delete button for the detail view -->
+  <!-- delete button (impelemented as second form) for the detail view -->
   <!-- relies on multiple url arguments -->
   <form th:unless="${createLinkClass}" th:fragment="deleteButton"
         th:action="
