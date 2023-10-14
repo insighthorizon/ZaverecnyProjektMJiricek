@@ -21,7 +21,7 @@
 </header>
 
 <!-- <section> containing table view card with paging (table of entries to browse) -->
-<section th:fragment="tableView" class="table-view">
+<section th:fragment="tableCard" class="table-card">
   <ol>
     <li class="grid-item grid-header"> <!-- table header - names of columns -->
       <div>ID#</div>
@@ -43,10 +43,10 @@
       <a th:href="
       '?view=' + ${viewIndex} +
       '&id=' + ${entry.foodID} +
-      '&searchedName=' + ${searchedName}" class="clickable">detail</a>
+      '&searchedName=' + ${searchedName}" class="clickable">Edit</a>
     </li>
   </ol>
-  <ul id="table-view-navigation"> <!-- buttons for Browsing though the table -->
+  <ul id="table-card-navigation"> <!-- buttons for Browsing though the table -->
     <!-- PREVIOUS button - has multiple URL arguments -->
     <a th:unless="${createLinkClass}" th:href="
     '?view=' + ${viewIndex - 1} +
@@ -63,7 +63,7 @@
 </section>
 
 <!-- <section> containing form with data fields, reset and update buttons -->
-<section th:fragment="detailView" th:if="${displayDetail}" class="detail-view">
+<section th:fragment="detailCard" th:if="${displayDetail}" class="detail-card">
   <p th:if="${createLinkClass}">NEW FOOD:</p>
   <!-- form used for either update or create action -->
   <!-- uses multiple url arguments -->
@@ -93,6 +93,13 @@
         th:method="DELETE">
     <input type="submit" value="Delete" class="clickable"/>
   </form>
+</section>
+
+<!-- status card containing errors and messages of status of finished operations to the user -->
+<section th:fragment="statusCard" class="status-card">
+  <p th:if="${uRLParameterError}" th:text="${uRLParameterError}" class="error"></p>
+  <p th:if="${inputError}" th:text="${inputError}" class="error"></p>
+  <p th:if="${operationStatus}" th:text="${operationStatus}" class="status"></p>
 </section>
 
 

@@ -18,6 +18,7 @@ import java.util.ArrayList;
  * which should be immutable. So this class is supposed to be thread safe by default
  * TODO add input validation (ban negative mass, and so on)
  * Empty string names are allowed for testing purposses (it's quicker to not fill anything)
+ *
  */
 @Service
 public class DBService {
@@ -46,6 +47,7 @@ public class DBService {
     public FoodData dTOToFood(FoodDTO foodDTO) throws IllegalArgumentException {
         // parsing
         try {
+            // parsing from string to double
             double kcal = Double.parseDouble(foodDTO.getKcalContent());
             double prot = Double.parseDouble(foodDTO.getProteinContent());
             double carb = Double.parseDouble(foodDTO.getCarbContent());
@@ -86,9 +88,10 @@ public class DBService {
     /**
      * adds new entry in DB
      *
-     * @param foodData DTO with the attributes (entryName and entryContent) for the new db entry
+     * @param foodDTO DTO with the attributes (entryName and entryContent) for the new db entry
      */
-    public void addEntry(FoodData foodData) {
+    public void addEntry(FoodDTO foodDTO) throws IllegalArgumentException {
+        FoodData foodData = dTOToFood(foodDTO);
         virtualDatabase.addEntity(foodData);
     }
 
@@ -99,8 +102,11 @@ public class DBService {
      * @param id entry id
      * @return copy of the entry with desired id
      */
-    public Food showEntryById(int id) {
-        return virtualDatabase.getEntityCopyById(id);
+    public Food showEntryById(Integer id) {
+        if (id != null && id >= 0) // active prevention of nonsense
+            return virtualDatabase.getEntityCopyById(id);
+
+        return null;
     }
 
     /**
@@ -109,19 +115,27 @@ public class DBService {
      * @param id id of the deleted entry
      * @return true if entry found, false if not
      */
-    public boolean deleteEntry(int id) {
-        return virtualDatabase.deleteEntityById(id);
+    public boolean deleteEntry(Integer id) {
+        if (id != null && id >= 0) // active prevention of nonsense
+            return virtualDatabase.deleteEntityById(id);
+
+        return false;
     }
 
     /**
      * Finds an entry by id and changes its attributes to provided values (if found)
      *
-     * @param id       id of udpated entry
-     * @param foodData new entity contents
+     * @param id id of udpated entry
+     * @param foodDTO new entity contents
      * @return true if entry found, false if not
      */
-    public boolean updateEntry(int id, FoodData foodData) {
-        return virtualDatabase.updateEntityById(id, foodData);
+    public boolean updateEntry(Integer id, FoodDTO foodDTO) throws IllegalArgumentException {
+        if (id != null && id >= 0) { // active prevention of nonsense
+            FoodData foodData = dTOToFood(foodDTO);
+            return virtualDatabase.updateEntityById(id, foodData);
+        }
+
+        return false;
     }
 
     /**
@@ -136,6 +150,10 @@ public class DBService {
      * @return partial copy of the table given by the range
      */
     public ArrayList<Food> showEntriesByIndexRange(int startIndex, int copySize) {
+        if (startIndex < 0) // active prevention of nonsense
+            startIndex = 0;
+        if (copySize <= 0)
+            copySize = 1;
         return virtualDatabase.getTableSubcopy(startIndex, copySize);
     }
 
@@ -151,6 +169,10 @@ public class DBService {
      * @return list of found entries
      */
     public ArrayList<Food> showEntriesByName(String entryName, int startIndex, int copySize) {
+        if (startIndex < 0) // active prevention of nonsense
+            startIndex = 0;
+        if (copySize <= 0)
+            copySize = 1;
         return virtualDatabase.getTableSubcopy(entryName, startIndex, copySize);
     }
 

@@ -25,6 +25,7 @@ header>nav {
   gap: 10px;
 }
 
+/* styling of clickable elements (links, buttons) */
 .clickable {
   border: 1px solid black;
   border-radius: 5px;
@@ -40,10 +41,12 @@ header>nav {
   background-color: Thistle;
 }
 
-.table-view>ol>li>a {
+/* detail button padding */
+.table-card>ol>li>a {
   padding: 0 2px 0 2px;
 }
 
+/* highlighting of the current page in navbar */
 .current-page {
   background-color: DarkSlateGray;
   color: white;
@@ -55,7 +58,7 @@ main {
   min-height: 100vh;
 }
 
-.table-view {
+.table-card {
   list-style: none;
   background-color: Wheat;
   max-width: 640px;
@@ -73,18 +76,18 @@ main {
   font-weight: bold;
 }
 
-#table-view-navigation {
+#table-card-navigation {
   padding: 1vh 5vw 1vh 5vw;
   display: flex;
   justify-content: space-around;
 }
 
-#table-view-navigation > div {
+#table-card-navigation > div {
   font-weight: bold;
   font-color: Navy;
 }
 
-.table-view > ol {
+.table-card > ol {
   min-height: 35vh;
 }
 
@@ -96,30 +99,30 @@ main {
   margin-top: 2px;
 }
 
-.detail-view {
+.detail-card {
   background-color: Wheat;
   max-width: var(--card-max-width);
   margin: 20px auto auto auto;
   padding: 10px;
 }
 
-.detail-view > p {
+.detail-card > p {
   font-weight: bold;
   margin-bottom: 10px;
 }
 
-.detail-view>form>label,
-.detail-view>form>span {
+.detail-card>form>label,
+.detail-card>form>span {
   display: grid;
   grid-template-columns: 6rem auto;
   margin-bottom: 10px;
 }
 
-.detail-view .clickable {
+.detail-card .clickable {
   font-size: 1rem;
 }
 
-.detail-view>form {
+.detail-card>form {
   display: inline;
 }
 
@@ -136,4 +139,20 @@ main {
   color: White;
   font-weight: bold;
   font-size: 1.2rem;
+}
+
+.error {
+  color: Red;
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.status {
+  color: White;
+  font-size: 1.5rem;
+}
+
+.status-card {
+  margin-top: 3%;
+  text-align: center;
 }

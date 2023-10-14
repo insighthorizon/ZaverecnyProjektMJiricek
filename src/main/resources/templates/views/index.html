@@ -13,13 +13,17 @@ formMethod='PUT',
 formButton='Update'">
 
 <!-- replaced with <header> containing navbar -->
-<div th:replace="~{fragments/fragments.html :: navbar}"></div>
+<header th:replace="~{fragments/fragments.html :: navbar}"></header>
+
 <main>
     <!-- replaced by <section> containing table browsing card (table of entries to browse) -->
-    <div th:replace="~{fragments/fragments.html :: tableView}"></div>
+    <section th:replace="~{fragments/fragments.html :: tableCard}"></section>
 
     <!-- detail view card - contains form with fields, offers update and delete operations -->
-    <div th:replace="~{fragments/fragments.html :: detailView}"></div>
+    <section th:replace="~{fragments/fragments.html :: detailCard}"></section>
+
+    <!-- status card - containing erors or status of recently finished operations -->
+    <section th:replace="~{fragments/fragments.html :: statusCard}"></section>
 
 </main>
 </body>
