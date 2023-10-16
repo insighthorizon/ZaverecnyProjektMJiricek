@@ -4,10 +4,12 @@
 17.10.2023
 
 # Použité technologie
-- Java, Spring Boot, Thymeleaf
+- Java (SDK Eclipse Temurin version 17.0.7 https://adoptium.net/temurin/archive/?version=17)
+- Spring Boot
+-Thymeleaf
     
 # Toolchain
-- Maven, IntelliJ (verze knihoven jsou v pom.xml)
+- Maven, IntelliJ (verze Java SDK, a knihoven jsou v pom.xml)
 
 # VLASTNÍ ZADÁNÍ
 - Webová aplikace (dynamický web) pro správu nutriční databáze (evidence nutričních dat potravin). Potravina má název, kcal na 100 g hmotnosti, gramy bílkovin, sacharidů a tuků na 100 g hmotnosti.
@@ -15,6 +17,10 @@
 - Entity jsou uloženy v (operační) paměti serveru. Není použita databáze. Data existují jen po dobu spuštění serveru.
 - Pokus o dodržení konvencí MVC architektury. Proto jsou entity uloženy ve "virtuální databázi" a ne přímo součástí služby která by s databází komunikovala.
 
+# SPUŠTĚNÍ PROJEKTU
+- otevřít projekt v IntelliJ a Run ApplicationMain (main metoda je v této třídě)
+- v prohlížeči načíst adresu http://localhost:8080/
+    
 # Poznámky ke zvolenémů způsobu řešení
 - Tuším, že v praxi se spousta věcí dělá jinak než jsem udělal. Například se asi používá Bean Validation API, Hybernate, a databázi v projektu vůbec nemám. Z časových důvodů jsem neabsolvoval bonusové materiály ke spring boot, kde jsou tyto věci nejspíš vysvětleny (ještě nemám ani splněný všechen povinný elearning a zbývá mi na to už jen týden)
 - žádný javaScript, PUT, POST i DELETE request jsou zaločeny na html form
