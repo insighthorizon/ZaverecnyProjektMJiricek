@@ -166,4 +166,22 @@ public class FoodData {
         setFatContent(foodData.getFatContent());
     }
 
+    /**
+     * custom toString method for general debugging purposes
+     * - returns text representation of FoodData instance
+     * @return text representation of FoodData instance
+     */
+    @Override
+    public String toString() {
+        String units = " grams per 100 grams%n";
+        // String.format("%n") is portable, "\n" is not
+        return String.format("Printout of FoodData data inside " + super.toString() + ":%n" +
+                "=======================================================%n" +
+                "foodName: " + getFoodName() + "%n" +
+                "kcalContent: " + getKcalContent() + " kcal per 100 grams%n" +
+                "proteinContent: " + getProteinContent() + units +
+                "carbContent: " + getCarbContent() + units +
+                "fatContent: " + getFatContent() + units);
+    }
+
 }

@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 /**
  * Controller for handling GET, POST, PUT and DELETE http requests on the nutritional database
  * Paging is based on offset/limit
+ * - custom toString() method not implemented, because at no point are we working with Controller instance
+ *   (all other Classes with attributes actually have custom toString() for debugging purposes)
  * TODO later implement cursor based paging (based on id, not index offset)
  */
 @Controller
@@ -423,5 +425,4 @@ public class DBController {
         // no detail of item should be displayed
         return renderCreatePage(null, foodDTO, model);
     }
-
 }

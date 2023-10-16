@@ -62,4 +62,20 @@ public class Food extends FoodData implements Comparable<Food> {
     public int compareTo(Food otherEntity) {
         return Integer.compare(getFoodID(), otherEntity.getFoodID());
     }
+
+    /**
+     * custom toString method for general debugging purposes
+     * - returns text representation of Food instance
+     * @return text representation of Food instance
+     */
+    @Override
+    public String toString() {
+        // String.format("%n") is portable, "\n" is not
+        return String.format("Printout of Food data:%n" +
+                "=======================================================%n" +
+                "foodID: " + getFoodID() + "%n" +
+                "___Contained in Food:%n" +
+                super.toString());
+    }
+
 }

@@ -25,7 +25,7 @@ public class DBService {
     /**
      * reference to the virtual database the service will work with
      */
-    private final DBSimulator virtualDatabase;
+    private final DBSimulator dbSimulator;
 
     /**
      * Constructor
@@ -33,7 +33,7 @@ public class DBService {
      * - @Qualifier annotation to make the dependency injection explicit
      */
     public DBService(@Qualifier("createDBSimulator") DBSimulator dbSimulator) {
-        this.virtualDatabase = dbSimulator;
+        this.dbSimulator = dbSimulator;
     }
 
     /**
@@ -68,7 +68,7 @@ public class DBService {
      * @return number of entries in DB
      */
     public int getDBSize() {
-        return virtualDatabase.getTableSize();
+        return dbSimulator.getTableSize();
     }
 
     /**
@@ -78,7 +78,7 @@ public class DBService {
      * @return number of ocurrences with a given name
      */
     public int howManyEntriesOfName(String entryName) {
-        return virtualDatabase.getNameCount(entryName);
+        return dbSimulator.getNameCount(entryName);
     }
 
     /**
@@ -87,7 +87,7 @@ public class DBService {
      */
     public void addEntry(FoodDTO foodDTO) throws IllegalArgumentException {
         FoodData foodData = dTOToFood(foodDTO);
-        virtualDatabase.addEntity(foodData);
+        dbSimulator.addEntity(foodData);
     }
 
     /**
@@ -98,7 +98,7 @@ public class DBService {
      */
     public Food showEntryById(Integer id) {
         if (id != null && id >= 0) // active prevention of nonsense
-            return virtualDatabase.getEntityCopyById(id);
+            return dbSimulator.getEntityCopyById(id);
 
         return null;
     }
@@ -110,7 +110,7 @@ public class DBService {
      */
     public boolean deleteEntry(Integer id) {
         if (id != null && id >= 0) // active prevention of nonsense
-            return virtualDatabase.deleteEntityById(id);
+            return dbSimulator.deleteEntityById(id);
 
         return false;
     }
@@ -124,7 +124,7 @@ public class DBService {
     public boolean updateEntry(Integer id, FoodDTO foodDTO) throws IllegalArgumentException {
         if (id != null && id >= 0) { // active prevention of nonsense
             FoodData foodData = dTOToFood(foodDTO);
-            return virtualDatabase.updateEntityById(id, foodData);
+            return dbSimulator.updateEntityById(id, foodData);
         }
 
         return false;
@@ -146,7 +146,7 @@ public class DBService {
         if (copySize <= 0)
             copySize = 1;
 
-        return virtualDatabase.getTableSubcopy(startIndex, copySize);
+        return dbSimulator.getTableSubcopy(startIndex, copySize);
     }
 
     /**
@@ -165,7 +165,21 @@ public class DBService {
         if (copySize <= 0)
             copySize = 1;
 
-        return virtualDatabase.getTableSubcopy(entryName, startIndex, copySize);
+        return dbSimulator.getTableSubcopy(entryName, startIndex, copySize);
+    }
+
+    /**
+     * custom toString method for general debugging purposes
+     * - returns text representation of DBService instance
+     * @return text representation of DBService instance
+     */
+    @Override
+    public String toString() {
+        // String.format("%n") is portable, "\n" is not
+        return String.format("Printout of DBService " + super.toString() +":%n" +
+                "=======================================================%n" +
+                "___Contained in DBService:%n" +
+                dbSimulator.toString());
     }
 
 }

@@ -30,7 +30,7 @@ public class DBSimulator {
      * thread safety on higher level anyway.
      * (Need for locking all DBSErvice fields at once for some entire blocks of code)
      */
-    private volatile int nextId = 0;
+    private volatile int nextID = 0;
 
     /**
      * Entities are stored in an ArrayList
@@ -83,8 +83,8 @@ public class DBSimulator {
     public void addEntity(FoodData FoodData) {
         rwLock.writeLock().lock(); // start of sychronized code block (write)
         try { // add the new entry
-            nutritionalDBTable.add(new Food(nextId, FoodData));
-            nextId++; // unique id counter incrementation - warning about non-atomicity is ok since non-atomic operations are performed inside of synchronization block
+            nutritionalDBTable.add(new Food(nextID, FoodData));
+            nextID++; // unique id counter incrementation - warning about non-atomicity is ok since non-atomic operations are performed inside of synchronization block
         } finally {
             rwLock.writeLock().unlock(); // end of synchronized code block (write)
         }
@@ -210,6 +210,28 @@ public class DBSimulator {
         } finally {
             rwLock.readLock().unlock(); // end of synchronized code block (read)
         }
+    }
+
+    /**
+     * custom toString method for general debugging purposes
+     * - returns text representation of DBSimulator instance
+     * @return text representation of DBSimulator instance
+     */
+    @Override
+    public String toString() {
+        // String.format("%n") is portable, "\n" is not
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Printout of DBSimulator " + super.toString() + ":%n");
+        stringBuilder.append("=======================================================%n");
+        stringBuilder.append("nextID: " + this.nextID + "%n");
+        stringBuilder.append("rwLock: " + this.rwLock + "%n");
+        stringBuilder.append("___Contained in DBSimulator:%n");
+
+        for (Food food : this.nutritionalDBTable) {
+            stringBuilder.append(food.toString());
+        }
+
+        return String.format(stringBuilder.toString());
     }
 
 }

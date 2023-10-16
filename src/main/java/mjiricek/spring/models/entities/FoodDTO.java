@@ -34,7 +34,8 @@ public class FoodDTO {
 
     /**
      * constructor
-     * @param name of the food
+     *
+     * @param name name of the food
      * @param kcal kilocalories per 100 grams of the food
      * @param protein grams of protein per 100 grams of the food
      * @param carb grams of carbohydrates per 100 grams of the food
@@ -57,6 +58,7 @@ public class FoodDTO {
 
     /**
      * set all attributes based on Food entity
+     *
      * @param food food/entity
      */
     public void setAllAttributes(Food food) {
@@ -80,6 +82,7 @@ public class FoodDTO {
 
     /**
      * get name of the food
+     *
      * @return name of the food
      */
     public String getFoodName() {
@@ -88,6 +91,7 @@ public class FoodDTO {
 
     /**
      * set name of the food
+     *
      * @param foodName name of the food
      */
     public void setFoodName(String foodName) {
@@ -96,6 +100,7 @@ public class FoodDTO {
 
     /**
      * get kcal content of the food
+     *
      * @return kcal content of the food
      */
     public String getKcalContent() {
@@ -104,6 +109,7 @@ public class FoodDTO {
 
     /**
      * set kcal content of the food
+     *
      * @param kcalContent kcal content of the food
      */
     public void setKcalContent(String kcalContent) {
@@ -112,6 +118,7 @@ public class FoodDTO {
 
     /**
      * get protein content of the food
+     *
      * @return protein content of the food
      */
     public String getProteinContent() {
@@ -120,6 +127,7 @@ public class FoodDTO {
 
     /**
      * set protein content of the food
+     *
      * @param proteinContent protein content of the food
      */
     public void setProteinContent(String proteinContent) {
@@ -128,6 +136,7 @@ public class FoodDTO {
 
     /**
      * get carbohydrate content of the food
+     *
      * @return carbohydrate content of the food
      */
     public String getCarbContent() {
@@ -136,6 +145,7 @@ public class FoodDTO {
 
     /**
      * set carbohydrate content of the food
+     *
      * @param carbContent crabohydrate content of the food
      */
     public void setCarbContent(String carbContent) {
@@ -144,6 +154,7 @@ public class FoodDTO {
 
     /**
      * get fat content of the food
+     *
      * @return fat content of the food
      */
     public String getFatContent() {
@@ -152,10 +163,29 @@ public class FoodDTO {
 
     /**
      * set fat content of the food
+     *
      * @param fatContent fat content of the food
      */
     public void setFatContent(String fatContent) {
         this.fatContent = fatContent;
+    }
+
+    /**
+     * custom toString method for general debugging purposes
+     * - returns text representation of FoodDTO instance
+     * @return text representation of FoodDTO instance
+     */
+    @Override
+    public String toString() {
+        String units = " grams per 100 grams%n";
+        // String.format("%n") is portable, "\n" is not
+        return String.format("Printout of FoodDTO data inside " + super.toString() + ":%n" +
+                "=======================================================%n" +
+                "foodName: " + getFoodName() + "%n" +
+                "kcalContent: " + getKcalContent() + " kcal per 100 grams%n" +
+                "proteinContent: " + getProteinContent() + units +
+                "carbContent: " + getCarbContent() + units +
+                "fatContent: " + getFatContent() + units);
     }
 
 }
