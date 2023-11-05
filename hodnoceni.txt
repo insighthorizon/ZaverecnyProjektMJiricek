@@ -1,0 +1,15 @@
+Ceníme práci na projektu! 🏆 Prohlédli jsme si kód a máme k němu následující poznámky:
+
+1. Pojmenování identifikátorů - OK
+2. Dodržení principů SRP a SoC - Oba principy jsou poměrně OK. Určitě bych ale vyjmul logiku z metod controllerů do servisních tříd.
+3. Vhodný výběr datových typů - OK
+4. Formátování kódu - OK
+5. Duplicitní kód a nekonečné cykly - Není = OK
+6. Validace vstupních dat - Nejsou.
+7. Logičnost a složitost - Jak autor píše v readme, některé věci jsou řešeny nestandartně což zhoršuje čitelnost, ale vzhledem ke kontextu to chápu.
+8. Komentáře - OK
+9. Celkové hodnocení - Autor byl schopen napsat jednoduchou webovou aplikaci, kde prezentoval porozumění základním pojmům z programování i čášt pokročilejších technologii jako je SPringBoot. Do perfektnosti to má daleko, ale za ě OK. Účel to splnilo a autor se něco naučil.
+
+Doporučujeme případné výtky v kódu opravit, abyste jej mohli pak prezentovat budoucímu zaměstnavateli v co nejlepší kvalitě. 
+
+Pokud byste potřebovali s čímkoli pomoci, naplánujte si s námi konzultaci, rádi vám poradíme!
